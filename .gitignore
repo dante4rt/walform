@@ -1,0 +1,18 @@
+.DS_Store
+.env
+.env.*
+!.env.example
+node_modules/
+.next/
+out/
+dist/
+coverage/
+.turbo/
+*.tsbuildinfo
+packages/contracts/build/
+packages/contracts/.move/
+
+# Keep Markdown notes local. README files are the only Markdown files tracked.
+*.md
+!README.md
+!**/README.md

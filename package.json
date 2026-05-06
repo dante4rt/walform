@@ -1,0 +1,30 @@
+{
+  "name": "walform",
+  "private": true,
+  "packageManager": "pnpm@9.12.0",
+  "engines": {
+    "node": ">=20 <23"
+  },
+  "scripts": {
+    "dev": "pnpm --filter @walform/web dev",
+    "build": "pnpm -r build",
+    "typecheck": "pnpm -r typecheck",
+    "lint": "pnpm -r lint",
+    "test": "pnpm -r test",
+    "move:build": "cd packages/contracts && sui move build",
+    "move:test": "cd packages/contracts && sui move test",
+    "deploy:contracts": "pnpm --filter @walform/scripts deploy:contracts",
+    "deploy:site": "pnpm --filter @walform/web build && bash scripts/src/deploy-walrus-site.sh",
+    "seed:demo": "pnpm --filter @walform/scripts seed:demo"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.4",
+    "@types/node": "^22.15.3",
+    "eslint": "^9.25.1",
+    "globals": "^17.6.0",
+    "prettier": "^3.5.3",
+    "turbo": "^2.5.2",
+    "typescript": "^5.8.3",
+    "typescript-eslint": "^8.59.2"
+  }
+}

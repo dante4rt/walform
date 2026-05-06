@@ -1,0 +1,22 @@
+{
+  "name": "@walform/scripts",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsc -p tsconfig.json --noEmit false --outDir dist",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "lint": "eslint src",
+    "test": "pnpm typecheck",
+    "deploy:contracts": "tsx src/deploy-contracts.ts",
+    "seed:demo": "tsx src/seed-demo-form.ts"
+  },
+  "dependencies": {
+    "@walform/sdk": "workspace:*",
+    "@walform/shared": "workspace:*",
+    "tsx": "^4.21.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3"
+  }
+}

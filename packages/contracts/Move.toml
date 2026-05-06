@@ -1,0 +1,10 @@
+[package]
+name = "walform_contracts"
+edition = "2024"
+license = "MIT"
+authors = ["Muhammad Ramadhani"]
+
+[dependencies]
+
+[addresses]
+walform = "0x0"

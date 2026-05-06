@@ -1,0 +1,10 @@
+{
+  "name": "Walform",
+  "short_name": "Walform",
+  "description": "Walrus-native feedback forms with private responses.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#F0FDFA",
+  "theme_color": "#134E4A",
+  "icons": []
+}
