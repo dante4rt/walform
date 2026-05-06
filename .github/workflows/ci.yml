@@ -21,5 +21,14 @@ jobs:
       - run: pnpm -r lint
       - run: pnpm -r typecheck
       - run: pnpm -r build
+      - name: Install Sui CLI
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          SUIUP_DISABLE_UPDATE_WARNINGS: true
+        run: |
+          curl -sSfL https://raw.githubusercontent.com/MystenLabs/suiup/main/install.sh | sh
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+          "$HOME/.local/bin/suiup" install sui@testnet-1.71.1 -y
+          "$HOME/.local/bin/sui" --version
       - run: pnpm move:build
       - run: pnpm move:test
