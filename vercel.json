@@ -1,0 +1,6 @@
+{
+  "buildCommand": "pnpm --filter @walform/web build",
+  "outputDirectory": "apps/web/out",
+  "framework": null,
+  "installCommand": "pnpm install"
+}

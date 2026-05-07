@@ -9,7 +9,8 @@
     "lint": "eslint src",
     "test": "pnpm typecheck",
     "deploy:contracts": "tsx src/deploy-contracts.ts",
-    "seed:demo": "tsx src/seed-demo-form.ts"
+    "seed:demo": "tsx src/seed-demo-form.ts",
+    "submit:response": "tsx src/submit-test-response.ts"
   },
   "dependencies": {
     "@walform/sdk": "workspace:*",

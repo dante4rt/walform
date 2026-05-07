@@ -6,6 +6,6 @@ export const NETWORK_PACKAGE_IDS = {
     walform: "0x0",
   },
   mainnet: {
-    walform: "0x0",
+    walform: "0xb90d18321d8c4652743a7c0ae0747b4723e7dedb954d5844c48b3bd44a715c4d",
   },
 } as const

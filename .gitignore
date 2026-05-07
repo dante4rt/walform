@@ -16,3 +16,4 @@ packages/contracts/.move/
 *.md
 !README.md
 !**/README.md
+.vercel

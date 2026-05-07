@@ -15,7 +15,8 @@
     "move:test": "cd packages/contracts && sui move test",
     "deploy:contracts": "pnpm --filter @walform/scripts deploy:contracts",
     "deploy:site": "pnpm --filter @walform/web build && bash scripts/src/deploy-walrus-site.sh",
-    "seed:demo": "pnpm --filter @walform/scripts seed:demo"
+    "seed:demo": "pnpm --filter @walform/scripts seed:demo",
+    "submit:response": "pnpm --filter @walform/scripts submit:response"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.4",
