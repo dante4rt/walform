@@ -29,7 +29,19 @@ export interface SubmitFormInput {
   rating: number | null
 }
 
+export interface PreparedSubmission {
+  stored: StoredSubmission
+  response: WalformResponse
+  rating: number | null
+}
+
 export async function submitFormResponse(input: SubmitFormInput): Promise<StoredSubmission> {
+  const prepared = await prepareFormResponse(input)
+  appendStoredSubmission(input.formId, prepared.stored)
+  return prepared.stored
+}
+
+export async function prepareFormResponse(input: SubmitFormInput): Promise<PreparedSubmission> {
   const response = walformResponseSchema.parse({
     form_id: input.formId,
     submitted_at_ms: Date.now(),
@@ -92,8 +104,11 @@ export async function submitFormResponse(input: SubmitFormInput): Promise<Stored
     },
   }
 
-  appendStoredSubmission(input.formId, stored)
-  return stored
+  return {
+    stored,
+    response,
+    rating: input.rating,
+  }
 }
 
 export function getStoredSubmissions(formId: string): StoredSubmission[] {
@@ -122,6 +137,10 @@ export function updateStoredSubmission(formId: string, updated: StoredSubmission
     submission.ref.blob_id === updated.ref.blob_id ? updated : submission,
   )
   window.localStorage.setItem(submissionsKey(formId), JSON.stringify(submissions))
+}
+
+export function appendPreparedSubmission(formId: string, submission: StoredSubmission): void {
+  appendStoredSubmission(formId, submission)
 }
 
 export async function decryptStoredSubmission(

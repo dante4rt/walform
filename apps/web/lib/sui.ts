@@ -1,4 +1,5 @@
 import type { Severity, WalformResponse } from "@walform/shared"
+import { Transaction } from "@mysten/sui/transactions"
 
 export const SEVERITY_TO_MOVE_CODE: Record<Exclude<Severity, "none"> | "none", number> = {
   none: 0,
@@ -85,4 +86,43 @@ export function createDemoTxDigest(input: {
   timestampMs: number
 }): string {
   return `demo-${input.formId}-${input.blobId}-${input.timestampMs}`.replace(/[^a-zA-Z0-9-]/g, "")
+}
+
+export function createSubmitResponseTransaction(input: {
+  packageId: string
+  formId: string
+  blobId: string
+  rootHash: string
+  response: WalformResponse
+  rating: number | null
+}) {
+  const tx = new Transaction()
+
+  tx.setGasBudget(20_000_000)
+  tx.moveCall({
+    target: `${input.packageId}::form::submit_response`,
+    arguments: [
+      tx.object(input.formId),
+      tx.pure.vector("u8", bytes(input.blobId)),
+      tx.pure.vector("u8", bytes(input.rootHash)),
+      tx.pure.option("address", input.response.submitter),
+      tx.pure.u64(input.response.submitted_at_ms),
+      tx.pure.u8(SEVERITY_TO_MOVE_CODE[input.response.severity ?? "none"]),
+      tx.pure.option("u64", input.rating),
+    ],
+  })
+
+  return tx
+}
+
+export function getConfiguredPackageId(): string | null {
+  return process.env.NEXT_PUBLIC_WALFORM_PACKAGE_ID || null
+}
+
+export function getConfiguredSuiChain(): "sui:testnet" | "sui:mainnet" {
+  return process.env.NEXT_PUBLIC_SUI_NETWORK === "mainnet" ? "sui:mainnet" : "sui:testnet"
+}
+
+function bytes(value: string): number[] {
+  return Array.from(new TextEncoder().encode(value))
 }

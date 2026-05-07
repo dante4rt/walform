@@ -1,12 +1,28 @@
 "use client"
 
 import { Icon } from "@iconify/react"
+import {
+  ConnectButton,
+  useCurrentAccount,
+  useSignAndExecuteTransaction,
+  useSuiClient,
+} from "@mysten/dapp-kit"
 import type { FormField, Severity, SubmissionMode, WalformSchema } from "@walform/shared"
 import Link from "next/link"
 import { useMemo, useState } from "react"
 
 import { Button } from "@/components/ui/button"
-import { submitFormResponse, type StoredSubmission } from "@/lib/submissions"
+import {
+  appendPreparedSubmission,
+  prepareFormResponse,
+  updateStoredSubmission,
+  type StoredSubmission,
+} from "@/lib/submissions"
+import {
+  createSubmitResponseTransaction,
+  getConfiguredPackageId,
+  getConfiguredSuiChain,
+} from "@/lib/sui"
 
 interface PublicFormProps {
   formId: string
@@ -26,9 +42,22 @@ const severityOptions: Array<{ value: Severity; label: string }> = [
 ]
 
 export function PublicForm({ formId, schema }: PublicFormProps) {
+  const currentAccount = useCurrentAccount()
+  const suiClient = useSuiClient()
+  const { mutateAsync: signAndExecuteTransaction } = useSignAndExecuteTransaction({
+    execute: async ({ bytes, signature }) =>
+      suiClient.executeTransactionBlock({
+        transactionBlock: bytes,
+        signature,
+        options: {
+          showEffects: true,
+          showObjectChanges: true,
+          showRawEffects: true,
+        },
+      }),
+  })
   const [answers, setAnswers] = useState<Record<string, AnswerValue>>({})
   const [submissionMode, setSubmissionMode] = useState<SubmissionMode>(schema.submission_mode)
-  const [walletAddress, setWalletAddress] = useState("0x4a7f...demo")
   const [severity, setSeverity] = useState<Severity>("none")
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [status, setStatus] = useState<"idle" | "submitting" | "success" | "error">("idle")
@@ -50,14 +79,45 @@ export function PublicForm({ formId, schema }: PublicFormProps) {
     try {
       setStatus("submitting")
       setErrorMessage("")
-      const stored = await submitFormResponse({
+      const prepared = await prepareFormResponse({
         formId,
         answers: normalizeAnswers(schema.fields, answers),
         severity: severity === "none" ? null : severity,
         submissionMode,
-        submitter: submissionMode === "wallet" ? walletAddress : null,
+        submitter: submissionMode === "wallet" ? currentAccount?.address ?? null : null,
         rating: extractRating(schema.fields, answers),
       })
+      const packageId = getConfiguredPackageId()
+      let stored = prepared.stored
+
+      if (packageId && currentAccount) {
+        const tx = createSubmitResponseTransaction({
+          packageId,
+          formId,
+          blobId: stored.ref.blob_id,
+          rootHash: stored.ref.root_hash,
+          response: prepared.response,
+          rating: prepared.rating,
+        })
+        const result = await signAndExecuteTransaction({
+          transaction: tx,
+          chain: getConfiguredSuiChain(),
+          account: currentAccount,
+        })
+
+        stored = {
+          ...stored,
+          tx: {
+            ...stored.tx,
+            digest: result.digest,
+          },
+        }
+      } else if (packageId && !currentAccount) {
+        throw new Error("Connect a Sui wallet on testnet before submitting on-chain.")
+      }
+
+      appendPreparedSubmission(formId, stored)
+      updateStoredSubmission(formId, stored)
 
       setResult(stored)
       setStatus("success")
@@ -127,16 +187,18 @@ export function PublicForm({ formId, schema }: PublicFormProps) {
               </select>
             </label>
             {submissionMode === "wallet" ? (
-              <label className="grid gap-2 md:col-span-2">
-                <span className="text-sm font-semibold text-[var(--color-ink)]">
-                  Wallet address
-                </span>
-                <input
-                  className="h-11 rounded-[var(--radius-button)] border border-[var(--color-hairline-soft)] bg-white px-3 font-mono text-sm outline-none focus:border-[var(--color-primary)]"
-                  onChange={(event) => setWalletAddress(event.target.value)}
-                  value={walletAddress}
-                />
-              </label>
+              <div className="grid gap-2 md:col-span-2">
+                <span className="text-sm font-semibold text-[var(--color-ink)]">Wallet</span>
+                <div className="flex flex-col gap-3 rounded-[var(--radius-button)] border border-[var(--color-hairline-soft)] bg-white p-3 sm:flex-row sm:items-center sm:justify-between">
+                  <span className="break-all font-mono text-xs text-[var(--color-slate)]">
+                    {currentAccount?.address ?? "Connect a testnet wallet to execute the Sui tx."}
+                  </span>
+                  <ConnectButton
+                    className="h-10 rounded-[var(--radius-button)] bg-[var(--color-primary)] px-4 text-sm font-semibold text-white"
+                    connectText="Connect wallet"
+                  />
+                </div>
+              </div>
             ) : null}
           </div>
 
@@ -189,7 +251,16 @@ export function PublicForm({ formId, schema }: PublicFormProps) {
                 </div>
                 <div>
                   <dt className="text-teal-50/60">Tx digest</dt>
-                  <dd className="break-all font-mono">{result.tx.digest}</dd>
+                  <dd className="break-all font-mono">
+                    <a
+                      className="underline decoration-teal-300/50 underline-offset-4"
+                      href={`https://suiexplorer.com/txblock/${result.tx.digest}?network=${process.env.NEXT_PUBLIC_SUI_NETWORK === "mainnet" ? "mainnet" : "testnet"}`}
+                      rel="noreferrer"
+                      target="_blank"
+                    >
+                      {result.tx.digest}
+                    </a>
+                  </dd>
                 </div>
                 <div>
                   <dt className="text-teal-50/60">Root hash</dt>
