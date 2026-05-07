@@ -1,6 +1,7 @@
 import Link from "next/link"
 
 import { CostBadge } from "@/components/CostBadge"
+import { ThemeToggle } from "@/components/theme-toggle"
 
 const featureTiles = [
   {
@@ -24,7 +25,10 @@ export default function Home() {
   return (
     <main className="min-h-[100dvh] bg-[var(--color-canvas)] text-[var(--color-charcoal)]">
       <section className="bg-[var(--color-primary-deep)] text-[var(--color-on-dark)]">
-        <div className="mx-auto grid max-w-7xl gap-10 px-5 py-14 md:grid-cols-[1fr_0.85fr] md:px-8 md:py-20 lg:py-24">
+        <div className="mx-auto flex max-w-7xl items-center justify-end px-5 pt-4 md:px-8">
+          <ThemeToggle />
+        </div>
+        <div className="mx-auto grid max-w-7xl gap-10 px-5 py-10 md:grid-cols-[1fr_0.85fr] md:px-8 md:py-16 lg:py-20">
           <div className="flex max-w-3xl flex-col justify-center">
             <p className="mb-5 w-fit rounded-[var(--radius-pill)] border border-white/20 px-4 py-2 text-sm font-medium text-teal-50">
               Walrus-native feedback protocol

@@ -11,8 +11,8 @@ const buttonVariants = cva(
       variant: {
         default: "bg-[var(--color-primary)] text-[var(--color-on-primary)] hover:bg-[var(--color-primary-pressed)]",
         accent: "bg-[var(--color-accent)] text-[var(--color-on-accent)] hover:bg-[#FBBF24]",
-        outline: "border border-[var(--color-hairline-soft)] bg-transparent text-[var(--color-ink)] hover:bg-white/50",
-        ghost: "bg-transparent text-[var(--color-ink)] hover:bg-white/50",
+        outline: "border border-[var(--color-hairline-soft)] bg-transparent text-[var(--color-ink)] hover:bg-white/50 dark:hover:bg-white/10",
+        ghost: "bg-transparent text-[var(--color-ink)] hover:bg-white/50 dark:hover:bg-white/10",
       },
     },
     defaultVariants: {

@@ -9,9 +9,10 @@ import {
 } from "@mysten/dapp-kit"
 import type { FormField, Severity, SubmissionMode, WalformSchema } from "@walform/shared"
 import Link from "next/link"
-import { useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 
 import { Button } from "@/components/ui/button"
+import { deleteDraft, loadDraft, saveDraft } from "@/lib/drafts"
 import {
   appendPreparedSubmission,
   prepareFormResponse,
@@ -23,6 +24,7 @@ import {
   getConfiguredPackageId,
   getConfiguredSuiChain,
 } from "@/lib/sui"
+import { dispatchWebhook } from "@/lib/webhook"
 
 interface PublicFormProps {
   formId: string
@@ -63,9 +65,38 @@ export function PublicForm({ formId, schema }: PublicFormProps) {
   const [status, setStatus] = useState<"idle" | "submitting" | "success" | "error">("idle")
   const [result, setResult] = useState<StoredSubmission | null>(null)
   const [errorMessage, setErrorMessage] = useState("")
+  const [draftRestored, setDraftRestored] = useState(false)
+  const draftTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const requiredCount = useMemo(
     () => schema.fields.filter((field) => field.required).length,
     [schema.fields],
+  )
+
+  // Load draft on mount.
+  useEffect(() => {
+    loadDraft(formId).then((draft) => {
+      if (draft) {
+        setAnswers(draft.answers as Record<string, AnswerValue>)
+        if (draft.severity) setSeverity(draft.severity as Severity)
+        setDraftRestored(true)
+      }
+    })
+  }, [formId])
+
+  // Debounced draft save on answer/severity change.
+  const scheduleDraftSave = useCallback(
+    (nextAnswers: Record<string, AnswerValue>, nextSeverity: Severity) => {
+      if (draftTimer.current) clearTimeout(draftTimer.current)
+      draftTimer.current = setTimeout(() => {
+        saveDraft({
+          formId,
+          answers: nextAnswers as Record<string, unknown>,
+          severity: nextSeverity,
+          updatedAt: Date.now(),
+        })
+      }, 1000)
+    },
+    [formId],
   )
 
   async function handleSubmit() {
@@ -118,6 +149,17 @@ export function PublicForm({ formId, schema }: PublicFormProps) {
 
       appendPreparedSubmission(formId, stored)
       updateStoredSubmission(formId, stored)
+      deleteDraft(formId)
+
+      // Fire webhook (non-blocking, best-effort).
+      dispatchWebhook(formId, {
+        blobId: stored.ref.blob_id,
+        rootHash: stored.ref.root_hash,
+        txDigest: stored.tx.digest,
+        timestampMs: stored.ref.timestamp_ms,
+        submitter: stored.ref.submitter ?? null,
+        severity: stored.ref.severity === "none" ? null : stored.ref.severity,
+      })
 
       setResult(stored)
       setStatus("success")
@@ -149,12 +191,24 @@ export function PublicForm({ formId, schema }: PublicFormProps) {
           </div>
 
           <div className="mt-6 grid gap-5">
+            {draftRestored ? (
+              <div className="flex items-center gap-2 rounded-[var(--radius-button)] border border-[var(--color-hairline)] bg-[var(--color-tint-mint)] px-4 py-2.5 text-sm text-[var(--color-primary-deep)]">
+                <Icon icon="solar:cloud-check-linear" className="h-4 w-4" />
+                Draft restored from your last visit.
+              </div>
+            ) : null}
             {schema.fields.map((field) => (
               <FieldControl
                 error={errors[field.id]}
                 field={field}
                 key={field.id}
-                onChange={(value) => setAnswers((current) => ({ ...current, [field.id]: value }))}
+                onChange={(value) => {
+                  setAnswers((current) => {
+                    const next = { ...current, [field.id]: value }
+                    scheduleDraftSave(next, severity)
+                    return next
+                  })
+                }}
                 value={answers[field.id]}
               />
             ))}
@@ -164,7 +218,7 @@ export function PublicForm({ formId, schema }: PublicFormProps) {
             <label className="grid gap-2">
               <span className="text-sm font-semibold text-[var(--color-ink)]">Submission mode</span>
               <select
-                className="h-11 rounded-[var(--radius-button)] border border-[var(--color-hairline-soft)] bg-white px-3 text-sm outline-none focus:border-[var(--color-primary)]"
+                className="h-11 rounded-[var(--radius-button)] border border-[var(--color-hairline-soft)] bg-[var(--color-card)] px-3 text-sm outline-none focus:border-[var(--color-primary)]"
                 onChange={(event) => setSubmissionMode(event.target.value as SubmissionMode)}
                 value={submissionMode}
               >
@@ -175,8 +229,12 @@ export function PublicForm({ formId, schema }: PublicFormProps) {
             <label className="grid gap-2">
               <span className="text-sm font-semibold text-[var(--color-ink)]">Severity</span>
               <select
-                className="h-11 rounded-[var(--radius-button)] border border-[var(--color-hairline-soft)] bg-white px-3 text-sm outline-none focus:border-[var(--color-primary)]"
-                onChange={(event) => setSeverity(event.target.value as Severity)}
+                className="h-11 rounded-[var(--radius-button)] border border-[var(--color-hairline-soft)] bg-[var(--color-card)] px-3 text-sm outline-none focus:border-[var(--color-primary)]"
+                onChange={(event) => {
+                  const next = event.target.value as Severity
+                  setSeverity(next)
+                  scheduleDraftSave(answers, next)
+                }}
                 value={severity}
               >
                 {severityOptions.map((option) => (
@@ -189,7 +247,7 @@ export function PublicForm({ formId, schema }: PublicFormProps) {
             {submissionMode === "wallet" ? (
               <div className="grid gap-2 md:col-span-2">
                 <span className="text-sm font-semibold text-[var(--color-ink)]">Wallet</span>
-                <div className="flex flex-col gap-3 rounded-[var(--radius-button)] border border-[var(--color-hairline-soft)] bg-white p-3 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex flex-col gap-3 rounded-[var(--radius-button)] border border-[var(--color-hairline-soft)] bg-[var(--color-card)] p-3 sm:flex-row sm:items-center sm:justify-between">
                   <span className="break-all font-mono text-xs text-[var(--color-slate)]">
                     {currentAccount?.address ?? "Connect a testnet wallet to execute the Sui tx."}
                   </span>
@@ -203,7 +261,7 @@ export function PublicForm({ formId, schema }: PublicFormProps) {
           </div>
 
           {status === "error" ? (
-            <div className="mt-5 rounded-[var(--radius-button)] border border-red-200 bg-red-50 p-4 text-sm text-[var(--color-error)]">
+            <div className="mt-5 rounded-[var(--radius-button)] border border-red-200 bg-red-50 p-4 text-sm text-[var(--color-error)] dark:border-red-800 dark:bg-red-950">
               {errorMessage}
             </div>
           ) : null}
@@ -306,7 +364,7 @@ function renderInput(
   if (field.type === "rich_text") {
     return (
       <textarea
-        className="min-h-32 rounded-[var(--radius-button)] border border-[var(--color-hairline-soft)] bg-white px-3 py-2 text-sm leading-6 outline-none focus:border-[var(--color-primary)]"
+        className="min-h-32 rounded-[var(--radius-button)] border border-[var(--color-hairline-soft)] bg-[var(--color-card)] px-3 py-2 text-sm leading-6 outline-none focus:border-[var(--color-primary)]"
         onChange={(event) => onChange(event.target.value)}
         value={typeof value === "string" ? value : ""}
       />
@@ -318,7 +376,7 @@ function renderInput(
 
     return (
       <select
-        className="h-11 rounded-[var(--radius-button)] border border-[var(--color-hairline-soft)] bg-white px-3 text-sm outline-none focus:border-[var(--color-primary)]"
+        className="h-11 rounded-[var(--radius-button)] border border-[var(--color-hairline-soft)] bg-[var(--color-card)] px-3 text-sm outline-none focus:border-[var(--color-primary)]"
         onChange={(event) => onChange(event.target.value)}
         value={typeof value === "string" ? value : ""}
       >
@@ -387,7 +445,7 @@ function renderInput(
     return (
       <input
         accept={field.type === "screenshot" ? "image/*" : "video/*"}
-        className="rounded-[var(--radius-button)] border border-dashed border-[var(--color-stone)] bg-white p-3 text-sm file:mr-3 file:rounded-[var(--radius-button)] file:border-0 file:bg-[var(--color-tint-mint)] file:px-3 file:py-2 file:text-sm file:font-semibold file:text-[var(--color-primary-deep)]"
+        className="rounded-[var(--radius-button)] border border-dashed border-[var(--color-stone)] bg-[var(--color-card)] p-3 text-sm file:mr-3 file:rounded-[var(--radius-button)] file:border-0 file:bg-[var(--color-tint-mint)] file:px-3 file:py-2 file:text-sm file:font-semibold file:text-[var(--color-primary-deep)]"
         onChange={(event) => onChange(event.target.files?.[0]?.name ?? null)}
         type="file"
       />
@@ -397,7 +455,7 @@ function renderInput(
   if (field.type === "url") {
     return (
       <input
-        className="h-11 rounded-[var(--radius-button)] border border-[var(--color-hairline-soft)] bg-white px-3 text-sm outline-none focus:border-[var(--color-primary)]"
+        className="h-11 rounded-[var(--radius-button)] border border-[var(--color-hairline-soft)] bg-[var(--color-card)] px-3 text-sm outline-none focus:border-[var(--color-primary)]"
         onChange={(event) => onChange(event.target.value)}
         placeholder="https://"
         type="url"

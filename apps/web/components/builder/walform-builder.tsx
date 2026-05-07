@@ -234,7 +234,7 @@ export function WalformBuilder({ templateSchema = null }: WalformBuilderProps) {
         </div>
 
         {saveError ? (
-          <div className="mt-6 rounded-[var(--radius-button)] border border-red-200 bg-red-50 p-4 text-sm text-[var(--color-error)]">
+          <div className="mt-6 rounded-[var(--radius-button)] border border-red-200 bg-red-50 p-4 text-sm text-[var(--color-error)] dark:border-red-800 dark:bg-red-950">
             {saveError}
           </div>
         ) : null}
