@@ -1,0 +1,819 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Walform — Demo Animation</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --primary: #0F766E;
+    --primary-deep: #134E4A;
+    --accent: #F59E0B;
+    --mint: #CCFBF1;
+    --sky: #E0F2FE;
+    --peach: #FED7AA;
+    --cream: #FEF3C7;
+    --canvas: #F0FDFA;
+    --ink: #134E4A;
+    --charcoal: #1F2937;
+    --slate: #64748B;
+    --white: #FFFFFF;
+
+    --sans: "Plus Jakarta Sans", system-ui, sans-serif;
+    --mono: "JetBrains Mono", ui-monospace, monospace;
+  }
+
+  html, body {
+    margin: 0; padding: 0;
+    background: #000;
+    overflow: hidden;
+    font-family: var(--sans);
+    color: var(--ink);
+    -webkit-font-smoothing: antialiased;
+  }
+  * { box-sizing: border-box; }
+
+  .stage {
+    position: fixed;
+    top: 50%; left: 50%;
+    width: 1920px; height: 1080px;
+    transform-origin: center center;
+    background: var(--canvas);
+    overflow: hidden;
+  }
+
+  .scene {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    visibility: hidden;
+    will-change: opacity, transform;
+  }
+  .scene.visible { visibility: visible; }
+
+  /* Chrome elements hidden during recording */
+  .progress, .counter, .replay, .masthead, .footer, .no-record, [data-role="chrome"] {
+    display: none !important;
+  }
+
+  /* ============ Scene 0: Opening ============ */
+  .scene-hero {
+    background: var(--primary-deep);
+    flex-direction: column;
+    gap: 24px;
+  }
+  .scene-hero .pill {
+    padding: 10px 24px;
+    border-radius: 9999px;
+    border: 1px solid rgba(255,255,255,0.2);
+    font-size: 15px;
+    font-weight: 500;
+    color: rgba(255,255,255,0.85);
+    letter-spacing: 0.02em;
+  }
+  .scene-hero .title {
+    font-size: 80px;
+    font-weight: 700;
+    color: var(--white);
+    line-height: 1.05;
+    letter-spacing: -0.02em;
+    text-align: center;
+    max-width: 1200px;
+  }
+  .scene-hero .title .accent { color: var(--accent); }
+  .scene-hero .sub {
+    font-size: 22px;
+    color: rgba(255,255,255,0.7);
+    text-align: center;
+    max-width: 700px;
+    line-height: 1.5;
+  }
+
+  /* ============ Scene 1: Three pillars ============ */
+  .scene-pillars {
+    background: var(--canvas);
+    flex-direction: column;
+    gap: 60px;
+  }
+  .scene-pillars .heading {
+    font-size: 48px;
+    font-weight: 700;
+    color: var(--ink);
+    text-align: center;
+  }
+  .pillars-row {
+    display: flex;
+    gap: 32px;
+    padding: 0 160px;
+  }
+  .pillar-card {
+    flex: 1;
+    border-radius: 20px;
+    padding: 48px 36px;
+    border: 1px solid rgba(0,0,0,0.06);
+    box-shadow: 0 4px 12px rgba(15,23,42,0.06);
+  }
+  .pillar-card.mint { background: var(--mint); }
+  .pillar-card.sky { background: var(--sky); }
+  .pillar-card.peach { background: var(--peach); }
+  .pillar-card h3 {
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--ink);
+    margin: 0 0 16px;
+  }
+  .pillar-card p {
+    font-size: 17px;
+    line-height: 1.6;
+    color: var(--charcoal);
+    margin: 0;
+  }
+  .pillar-icon {
+    width: 56px; height: 56px;
+    border-radius: 14px;
+    background: var(--white);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 20px;
+    font-size: 28px;
+  }
+
+  /* ============ Scene 2: Form builder mockup ============ */
+  .scene-builder {
+    background: var(--canvas);
+    flex-direction: column;
+    gap: 40px;
+  }
+  .builder-heading {
+    font-size: 42px;
+    font-weight: 700;
+    color: var(--ink);
+  }
+  .builder-mockup {
+    width: 1200px;
+    background: var(--white);
+    border-radius: 24px;
+    border: 1px solid rgba(0,0,0,0.06);
+    box-shadow: 0 24px 48px -12px rgba(15,118,110,0.18);
+    overflow: hidden;
+  }
+  .builder-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 24px 32px;
+    border-bottom: 1px solid #E2E8F0;
+  }
+  .builder-header .badge {
+    padding: 6px 16px;
+    border-radius: 9999px;
+    background: var(--cream);
+    font-size: 13px;
+    font-weight: 600;
+    color: #92400E;
+  }
+  .builder-body { padding: 32px; }
+  .builder-field {
+    border-radius: 16px;
+    border: 1px solid #E2E8F0;
+    padding: 20px 24px;
+    margin-bottom: 16px;
+    background: var(--canvas);
+  }
+  .builder-field .label-bar {
+    width: 160px;
+    height: 10px;
+    border-radius: 5px;
+    background: #99F6E4;
+    margin-bottom: 10px;
+  }
+  .builder-field .field-label {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--charcoal);
+    margin-bottom: 12px;
+  }
+  .builder-field .field-input {
+    height: 44px;
+    border-radius: 10px;
+    border: 1px dashed #94A3B8;
+    background: var(--white);
+  }
+  .builder-field .star-row {
+    display: flex;
+    gap: 8px;
+  }
+  .builder-field .star {
+    width: 32px; height: 32px;
+    border-radius: 6px;
+    background: var(--cream);
+  }
+  .builder-field .star.filled { background: var(--accent); }
+  .builder-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-top: 24px;
+  }
+  .stat-box {
+    border-radius: 12px;
+    padding: 16px;
+    text-align: center;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--ink);
+  }
+  .stat-box.mint { background: var(--mint); }
+  .stat-box.sky { background: var(--sky); }
+  .stat-box.peach { background: var(--peach); }
+
+  /* ============ Scene 3: Encryption visual ============ */
+  .scene-encrypt {
+    background: var(--primary-deep);
+    flex-direction: column;
+    gap: 48px;
+  }
+  .encrypt-title {
+    font-size: 48px;
+    font-weight: 700;
+    color: var(--white);
+  }
+  .encrypt-flow {
+    display: flex;
+    align-items: center;
+    gap: 40px;
+  }
+  .encrypt-box {
+    width: 280px;
+    padding: 32px;
+    border-radius: 20px;
+    text-align: center;
+  }
+  .encrypt-box.input-box {
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.15);
+  }
+  .encrypt-box.process-box {
+    background: var(--accent);
+    color: var(--charcoal);
+  }
+  .encrypt-box.output-box {
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.15);
+  }
+  .encrypt-box .box-icon {
+    font-size: 48px;
+    margin-bottom: 16px;
+  }
+  .encrypt-box .box-label {
+    font-size: 20px;
+    font-weight: 600;
+  }
+  .encrypt-box .box-sub {
+    font-size: 14px;
+    opacity: 0.7;
+    margin-top: 8px;
+  }
+  .encrypt-arrow {
+    font-size: 36px;
+    color: rgba(255,255,255,0.4);
+  }
+  .policies {
+    display: flex;
+    gap: 20px;
+    margin-top: 8px;
+  }
+  .policy-pill {
+    padding: 10px 24px;
+    border-radius: 10px;
+    background: rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.15);
+    color: var(--white);
+    font-size: 15px;
+    font-weight: 500;
+  }
+  .policy-pill.active {
+    background: rgba(255,255,255,0.2);
+    border-color: rgba(255,255,255,0.4);
+  }
+
+  /* ============ Scene 4: Bounty + SBT ============ */
+  .scene-bounty {
+    background: var(--canvas);
+    flex-direction: row;
+    gap: 80px;
+    padding: 0 200px;
+  }
+  .bounty-left, .bounty-right {
+    flex: 1;
+  }
+  .bounty-left h2, .bounty-right h2 {
+    font-size: 40px;
+    font-weight: 700;
+    color: var(--ink);
+    margin: 0 0 20px;
+  }
+  .bounty-left p, .bounty-right p {
+    font-size: 18px;
+    line-height: 1.7;
+    color: var(--slate);
+    margin: 0 0 32px;
+  }
+  .tier-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .tier-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 24px;
+    border-radius: 12px;
+    background: var(--white);
+    border: 1px solid #E2E8F0;
+  }
+  .tier-label {
+    font-size: 16px;
+    font-weight: 600;
+  }
+  .tier-amount {
+    font-family: var(--mono);
+    font-size: 15px;
+    color: var(--primary);
+    font-weight: 500;
+  }
+  .tier-dot {
+    width: 12px; height: 12px;
+    border-radius: 50%;
+    margin-right: 12px;
+  }
+  .sbt-card {
+    padding: 32px;
+    border-radius: 20px;
+    background: var(--white);
+    border: 1px solid #E2E8F0;
+    box-shadow: 0 4px 12px rgba(15,23,42,0.06);
+  }
+  .sbt-card .sbt-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+  .sbt-card .sbt-icon {
+    width: 48px; height: 48px;
+    border-radius: 12px;
+    background: var(--mint);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+  }
+  .sbt-card .sbt-title {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--ink);
+  }
+  .sbt-card .sbt-sub {
+    font-size: 13px;
+    color: var(--slate);
+  }
+  .sbt-field {
+    display: flex;
+    justify-content: space-between;
+    padding: 12px 0;
+    border-bottom: 1px solid #E2E8F0;
+    font-size: 14px;
+  }
+  .sbt-field .key { color: var(--slate); }
+  .sbt-field .val { font-family: var(--mono); color: var(--ink); font-weight: 500; font-size: 13px; }
+
+  /* ============ Scene 5: Closing ============ */
+  .scene-close {
+    background: var(--primary-deep);
+    flex-direction: column;
+    gap: 32px;
+  }
+  .scene-close .url {
+    font-family: var(--mono);
+    font-size: 28px;
+    color: var(--accent);
+    letter-spacing: 0.02em;
+  }
+  .scene-close .title {
+    font-size: 72px;
+    font-weight: 700;
+    color: var(--white);
+    text-align: center;
+    line-height: 1.1;
+    max-width: 1000px;
+  }
+  .scene-close .cta {
+    padding: 16px 40px;
+    border-radius: 10px;
+    background: var(--accent);
+    color: var(--charcoal);
+    font-size: 20px;
+    font-weight: 600;
+  }
+  .scene-close .tech {
+    display: flex;
+    gap: 16px;
+    margin-top: 8px;
+  }
+  .scene-close .tech-pill {
+    padding: 8px 20px;
+    border-radius: 9999px;
+    border: 1px solid rgba(255,255,255,0.2);
+    color: rgba(255,255,255,0.6);
+    font-size: 14px;
+    font-weight: 500;
+  }
+</style>
+</head>
+<body>
+<div class="stage" id="stage">
+  <!-- Scene 0: Hero (0 → 3s) -->
+  <div class="scene scene-hero" id="scene-hero">
+    <div class="pill">Walrus-native feedback protocol</div>
+    <div class="title">
+      Forms with <span class="accent">proof</span>.<br>
+      Responses with <span class="accent">privacy</span>.
+    </div>
+    <div class="sub">Every form is a Sui NFT. Every response is a private Walrus blob.</div>
+  </div>
+
+  <!-- Scene 1: Three pillars (3 → 7s) -->
+  <div class="scene scene-pillars" id="scene-pillars">
+    <div class="heading">What you get</div>
+    <div class="pillars-row">
+      <div class="pillar-card mint" id="card-composable">
+        <div class="pillar-icon">◇</div>
+        <h3>Composable</h3>
+        <p>Forms are Sui objects. Any dApp reads counts and ratings without decryption.</p>
+      </div>
+      <div class="pillar-card sky" id="card-private">
+        <div class="pillar-icon">🔒</div>
+        <h3>Private by default</h3>
+        <p>Seal threshold encryption. Only owner and approved admins can decrypt.</p>
+      </div>
+      <div class="pillar-card peach" id="card-cost">
+        <div class="pillar-icon">↓</div>
+        <h3>Pay per byte</h3>
+        <p>Walrus quilts batch responses. 100 cost as much as one. No monthly cap.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scene 2: Form builder (7 → 12s) -->
+  <div class="scene scene-builder" id="scene-builder">
+    <div class="builder-heading">Drag-and-drop form builder</div>
+    <div class="builder-mockup" id="builder-mockup">
+      <div class="builder-header">
+        <div>
+          <div style="font-size:13px;font-weight:600;color:var(--slate);text-transform:uppercase;letter-spacing:0.08em">Builder</div>
+          <div style="font-size:24px;font-weight:700;color:var(--ink);margin-top:4px">Walrus Sessions Feedback</div>
+        </div>
+        <div class="badge">Seal enabled</div>
+      </div>
+      <div class="builder-body">
+        <div class="builder-field" id="field-1">
+          <div class="label-bar"></div>
+          <div class="field-label">What worked well?</div>
+          <div class="field-input"></div>
+        </div>
+        <div class="builder-field" id="field-2">
+          <div class="label-bar" style="width:120px"></div>
+          <div class="field-label">Overall rating</div>
+          <div class="star-row">
+            <div class="star filled"></div>
+            <div class="star filled"></div>
+            <div class="star filled"></div>
+            <div class="star filled"></div>
+            <div class="star"></div>
+          </div>
+        </div>
+        <div class="builder-field" id="field-3">
+          <div class="label-bar" style="width:140px"></div>
+          <div class="field-label">Attach screenshot</div>
+          <div class="field-input" style="border-style:dashed"></div>
+        </div>
+        <div class="builder-stats">
+          <div class="stat-box mint">42 responses</div>
+          <div class="stat-box sky">4.7 rating</div>
+          <div class="stat-box peach">1 WAL pool</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scene 3: Encryption (12 → 16s) -->
+  <div class="scene scene-encrypt" id="scene-encrypt">
+    <div class="encrypt-title">Seal-encrypted responses</div>
+    <div class="encrypt-flow">
+      <div class="encrypt-box input-box" id="enc-input">
+        <div class="box-icon">📝</div>
+        <div class="box-label">Response</div>
+        <div class="box-sub">Plain text answers</div>
+      </div>
+      <div class="encrypt-arrow" id="enc-arrow-1">→</div>
+      <div class="encrypt-box process-box" id="enc-process">
+        <div class="box-icon">🔐</div>
+        <div class="box-label">Seal Encrypt</div>
+        <div class="box-sub">Client-side, threshold</div>
+      </div>
+      <div class="encrypt-arrow" id="enc-arrow-2">→</div>
+      <div class="encrypt-box output-box" id="enc-output">
+        <div class="box-icon">🧊</div>
+        <div class="box-label">Walrus Blob</div>
+        <div class="box-sub">Verifiable, immutable</div>
+      </div>
+    </div>
+    <div class="policies">
+      <div class="policy-pill" id="pol-open">Open</div>
+      <div class="policy-pill" id="pol-token">Token-gated</div>
+      <div class="policy-pill" id="pol-allow">Allowlist</div>
+      <div class="policy-pill" id="pol-time">Time-locked</div>
+    </div>
+  </div>
+
+  <!-- Scene 4: Bounty + SBT (16 → 21s) -->
+  <div class="scene scene-bounty" id="scene-bounty">
+    <div class="bounty-left">
+      <h2>Bounty escrow</h2>
+      <p>Fund a form with WAL. Approve responses. Auto-payout to submitters by severity.</p>
+      <div class="tier-list">
+        <div class="tier-row" id="tier-low">
+          <div style="display:flex;align-items:center">
+            <div class="tier-dot" style="background:#10B981"></div>
+            <span class="tier-label">Low</span>
+          </div>
+          <span class="tier-amount">0.1 WAL</span>
+        </div>
+        <div class="tier-row" id="tier-med">
+          <div style="display:flex;align-items:center">
+            <div class="tier-dot" style="background:#F59E0B"></div>
+            <span class="tier-label">Medium</span>
+          </div>
+          <span class="tier-amount">0.5 WAL</span>
+        </div>
+        <div class="tier-row" id="tier-high">
+          <div style="display:flex;align-items:center">
+            <div class="tier-dot" style="background:#F97316"></div>
+            <span class="tier-label">High</span>
+          </div>
+          <span class="tier-amount">2.0 WAL</span>
+        </div>
+        <div class="tier-row" id="tier-crit">
+          <div style="display:flex;align-items:center">
+            <div class="tier-dot" style="background:#DC2626"></div>
+            <span class="tier-label">Critical</span>
+          </div>
+          <span class="tier-amount">5.0 WAL</span>
+        </div>
+      </div>
+    </div>
+    <div class="bounty-right">
+      <h2>SBT receipt</h2>
+      <p>Submitters mint a soulbound proof-of-feedback. Cross-form reputation, on-chain.</p>
+      <div class="sbt-card" id="sbt-card">
+        <div class="sbt-header">
+          <div class="sbt-icon">🏅</div>
+          <div>
+            <div class="sbt-title">Feedback Receipt</div>
+            <div class="sbt-sub">Soulbound · Non-transferable</div>
+          </div>
+        </div>
+        <div class="sbt-field"><span class="key">Form</span><span class="val">0xFORM</span></div>
+        <div class="sbt-field"><span class="key">Response #</span><span class="val">42</span></div>
+        <div class="sbt-field"><span class="key">Submitted</span><span class="val">2026-05-07</span></div>
+        <div class="sbt-field"><span class="key">Chain</span><span class="val">Sui Mainnet</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scene 5: Closing (21 → 25s) -->
+  <div class="scene scene-close" id="scene-close">
+    <div class="url">walform.wal.app</div>
+    <div class="title">Ship your first form in 60 seconds</div>
+    <div class="cta">Create a form</div>
+    <div class="tech">
+      <div class="tech-pill">Sui</div>
+      <div class="tech-pill">Walrus</div>
+      <div class="tech-pill">Seal</div>
+      <div class="tech-pill">Walrus Sites</div>
+      <div class="tech-pill">Move 2024</div>
+    </div>
+  </div>
+</div>
+
+<script>
+window.__ready = false;
+
+const D = 25.0; // total duration in seconds
+
+// Scene timing (global seconds)
+const T = {
+  // Scene 0: Hero
+  hero_in:  [0.0, 0.6],
+  hero_out: [2.5, 3.0],
+
+  // Scene 1: Pillars
+  pillars_in:   [2.8, 3.4],
+  card1_in:     [3.5, 4.2],
+  card2_in:     [4.2, 4.9],
+  card3_in:     [4.9, 5.6],
+  pillars_out:  [6.5, 7.0],
+
+  // Scene 2: Builder
+  builder_in:   [6.8, 7.4],
+  field1_in:    [7.8, 8.3],
+  field2_in:    [8.3, 8.8],
+  field3_in:    [8.8, 9.3],
+  stats_in:     [9.5, 10.2],
+  builder_out:  [11.5, 12.0],
+
+  // Scene 3: Encryption
+  encrypt_in:   [11.8, 12.4],
+  box1_in:      [12.6, 13.1],
+  arrow1_in:    [13.1, 13.3],
+  box2_in:      [13.3, 13.8],
+  arrow2_in:    [13.8, 14.0],
+  box3_in:      [14.0, 14.5],
+  pol1:         [14.8, 15.1],
+  pol2:         [15.1, 15.4],
+  pol3:         [15.4, 15.7],
+  pol4:         [15.7, 16.0],
+  encrypt_out:  [16.5, 17.0],
+
+  // Scene 4: Bounty + SBT
+  bounty_in:    [16.8, 17.4],
+  tier1:        [17.6, 18.0],
+  tier2:        [18.0, 18.4],
+  tier3:        [18.4, 18.8],
+  tier4:        [18.8, 19.2],
+  sbt_in:       [19.3, 20.0],
+  bounty_out:   [21.0, 21.5],
+
+  // Scene 5: Close
+  close_in:     [21.3, 21.9],
+  close_hold:   [21.9, 25.0],
+};
+
+// Easings
+const expoOut = t => (t >= 1 ? 1 : 1 - Math.pow(2, -10 * t));
+const cubicOut = t => 1 - Math.pow(1 - t, 3);
+const linear = t => t;
+
+const clamp = (v, lo = 0, hi = 1) => Math.max(lo, Math.min(hi, v));
+const lerp = (t, t0, t1, v0, v1, ease = linear) => {
+  const p = clamp((t - t0) / (t1 - t0));
+  return v0 + (v1 - v0) * ease(p);
+};
+
+// DOM refs
+const $ = id => document.getElementById(id);
+const scenes = {
+  hero:    $('scene-hero'),
+  pillars: $('scene-pillars'),
+  builder: $('scene-builder'),
+  encrypt: $('scene-encrypt'),
+  bounty:  $('scene-bounty'),
+  close:   $('scene-close'),
+};
+
+function showScene(el, op) {
+  el.style.opacity = op;
+  el.style.visibility = op > 0.01 ? 'visible' : 'hidden';
+}
+
+function translateY(el, y, op) {
+  el.style.transform = `translateY(${y}px)`;
+  el.style.opacity = op;
+}
+
+function scaleIn(el, t, t0, t1) {
+  const p = clamp((t - t0) / (t1 - t0));
+  const ep = expoOut(p);
+  el.style.transform = `scale(${0.92 + 0.08 * ep}) translateY(${(1 - ep) * 30}px)`;
+  el.style.opacity = ep;
+}
+
+// Main animation loop
+let startTime = null;
+function tick(ts) {
+  if (!startTime) startTime = ts;
+  const t = ((ts - startTime) / 1000);
+
+  if (t > D + 0.5) {
+    window.__ready = false;
+    return;
+  }
+
+  // --- Scene 0: Hero ---
+  const heroOp = t < T.hero_out[0]
+    ? lerp(t, T.hero_in[0], T.hero_in[1], 0, 1, expoOut)
+    : lerp(t, T.hero_out[0], T.hero_out[1], 1, 0, cubicOut);
+  showScene(scenes.hero, heroOp);
+
+  // --- Scene 1: Pillars ---
+  const pillarsOp = t < T.pillars_out[0]
+    ? lerp(t, T.pillars_in[0], T.pillars_in[1], 0, 1, expoOut)
+    : lerp(t, T.pillars_out[0], T.pillars_out[1], 1, 0, cubicOut);
+  showScene(scenes.pillars, pillarsOp);
+
+  const c1 = $('card-composable');
+  const c2 = $('card-private');
+  const c3 = $('card-cost');
+  scaleIn(c1, t, T.card1_in[0], T.card1_in[1]);
+  scaleIn(c2, t, T.card2_in[0], T.card2_in[1]);
+  scaleIn(c3, t, T.card3_in[0], T.card3_in[1]);
+
+  // --- Scene 2: Builder ---
+  const builderOp = t < T.builder_out[0]
+    ? lerp(t, T.builder_in[0], T.builder_in[1], 0, 1, expoOut)
+    : lerp(t, T.builder_out[0], T.builder_out[1], 1, 0, cubicOut);
+  showScene(scenes.builder, builderOp);
+
+  translateY($('field-1'), lerp(t, T.field1_in[0], T.field1_in[1], 20, 0, expoOut),
+    lerp(t, T.field1_in[0], T.field1_in[1], 0, 1, expoOut));
+  translateY($('field-2'), lerp(t, T.field2_in[0], T.field2_in[1], 20, 0, expoOut),
+    lerp(t, T.field2_in[0], T.field2_in[1], 0, 1, expoOut));
+  translateY($('field-3'), lerp(t, T.field3_in[0], T.field3_in[1], 20, 0, expoOut),
+    lerp(t, T.field3_in[0], T.field3_in[1], 0, 1, expoOut));
+  translateY($('builder-mockup').querySelector('.builder-stats'),
+    lerp(t, T.stats_in[0], T.stats_in[1], 20, 0, expoOut),
+    lerp(t, T.stats_in[0], T.stats_in[1], 0, 1, expoOut));
+
+  // --- Scene 3: Encryption ---
+  const encOp = t < T.encrypt_out[0]
+    ? lerp(t, T.encrypt_in[0], T.encrypt_in[1], 0, 1, expoOut)
+    : lerp(t, T.encrypt_out[0], T.encrypt_out[1], 1, 0, cubicOut);
+  showScene(scenes.encrypt, encOp);
+
+  scaleIn($('enc-input'), t, T.box1_in[0], T.box1_in[1]);
+  scaleIn($('enc-arrow-1'), t, T.arrow1_in[0], T.arrow1_in[1]);
+  scaleIn($('enc-process'), t, T.box2_in[0], T.box2_in[1]);
+  scaleIn($('enc-arrow-2'), t, T.arrow2_in[0], T.arrow2_in[1]);
+  scaleIn($('enc-output'), t, T.box3_in[0], T.box3_in[1]);
+
+  // Policies highlight
+  for (let i = 0; i < 4; i++) {
+    const key = ['pol-open', 'pol-token', 'pol-allow', 'pol-time'][i];
+    const tKey = ['pol1', 'pol2', 'pol3', 'pol4'][i];
+    const el = $(key);
+    const p = clamp((t - T[tKey][0]) / (T[tKey][1] - T[tKey][0]));
+    if (p > 0 && p < 1) {
+      el.classList.add('active');
+      el.style.opacity = expoOut(p);
+      el.style.transform = `translateY(${(1 - expoOut(p)) * 10}px)`;
+    } else if (p >= 1) {
+      el.classList.add('active');
+      el.style.opacity = 1;
+      el.style.transform = 'translateY(0)';
+    } else {
+      el.classList.remove('active');
+      el.style.opacity = 0.6;
+    }
+  }
+
+  // --- Scene 4: Bounty + SBT ---
+  const bountyOp = t < T.bounty_out[0]
+    ? lerp(t, T.bounty_in[0], T.bounty_in[1], 0, 1, expoOut)
+    : lerp(t, T.bounty_out[0], T.bounty_out[1], 1, 0, cubicOut);
+  showScene(scenes.bounty, bountyOp);
+
+  translateY($('tier-low'), lerp(t, T.tier1[0], T.tier1[1], 15, 0, expoOut),
+    lerp(t, T.tier1[0], T.tier1[1], 0, 1, expoOut));
+  translateY($('tier-med'), lerp(t, T.tier2[0], T.tier2[1], 15, 0, expoOut),
+    lerp(t, T.tier2[0], T.tier2[1], 0, 1, expoOut));
+  translateY($('tier-high'), lerp(t, T.tier3[0], T.tier3[1], 15, 0, expoOut),
+    lerp(t, T.tier3[0], T.tier3[1], 0, 1, expoOut));
+  translateY($('tier-crit'), lerp(t, T.tier4[0], T.tier4[1], 15, 0, expoOut),
+    lerp(t, T.tier4[0], T.tier4[1], 0, 1, expoOut));
+
+  scaleIn($('sbt-card'), t, T.sbt_in[0], T.sbt_in[1]);
+
+  // --- Scene 5: Close ---
+  const closeOp = lerp(t, T.close_in[0], T.close_in[1], 0, 1, expoOut);
+  showScene(scenes.close, closeOp);
+
+  requestAnimationFrame(tick);
+}
+
+document.fonts.ready.then(() => {
+  requestAnimationFrame(() => {
+    window.__ready = true;
+    requestAnimationFrame(tick);
+  });
+});
+</script>
+</body>
+</html>
