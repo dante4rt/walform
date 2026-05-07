@@ -16,3 +16,7 @@ packages/contracts/.move/
 *.md
 !README.md
 !**/README.md
+!one-pager.md
+!SUBMISSION.md
+!DEPLOYMENT.md
+!DEPLOY_GUIDE.md

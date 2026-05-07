@@ -3,7 +3,7 @@ export const DEMO_ADMIN_ADDRESS =
 
 export const NETWORK_PACKAGE_IDS = {
   testnet: {
-    walform: "0x0",
+    walform: "0x74254b034b8cdfc6cb5da2551ed4db8d5eae202cf858b741a7736f85bf9836f1",
   },
   mainnet: {
     walform: "0x0",

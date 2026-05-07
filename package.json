@@ -13,8 +13,10 @@
     "test": "pnpm -r test",
     "move:build": "cd packages/contracts && sui move build",
     "move:test": "cd packages/contracts && sui move test",
-    "deploy:contracts": "pnpm --filter @walform/scripts deploy:contracts",
-    "deploy:site": "pnpm --filter @walform/web build && bash scripts/src/deploy-walrus-site.sh",
+    "deploy:contracts": "bash scripts/deploy-contracts.sh",
+    "deploy:contracts:mainnet": "bash scripts/deploy-contracts.sh mainnet",
+    "deploy:site": "pnpm --filter @walform/web build && bash scripts/deploy-site.sh",
+    "deploy:site:mainnet": "pnpm --filter @walform/web build && bash scripts/deploy-site.sh --network mainnet",
     "seed:demo": "pnpm --filter @walform/scripts seed:demo"
   },
   "devDependencies": {
