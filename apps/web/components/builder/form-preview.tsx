@@ -81,7 +81,7 @@ function renderControl(field: BuilderField) {
       <div className="grid gap-2">
         {field.options.filter(Boolean).map((option) => (
           <span className="flex items-center gap-2 text-sm text-[var(--color-charcoal)]" key={option}>
-            <span className="flex size-5 items-center justify-center rounded border border-[var(--color-hairline-soft)] bg-white" />
+            <span className="flex size-5 items-center justify-center rounded border border-[var(--color-hairline-soft)] bg-[var(--color-card)]" />
             {option}
           </span>
         ))}
@@ -119,7 +119,7 @@ function renderControl(field: BuilderField) {
 
   return (
     <span className="flex items-center gap-2 text-sm text-[var(--color-charcoal)]">
-      <span className="flex size-5 items-center justify-center rounded border border-[var(--color-hairline-soft)] bg-white" />
+      <span className="flex size-5 items-center justify-center rounded border border-[var(--color-hairline-soft)] bg-[var(--color-card)]" />
       {field.label}
     </span>
   )

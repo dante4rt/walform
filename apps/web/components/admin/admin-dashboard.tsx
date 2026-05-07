@@ -7,6 +7,7 @@ import { useEffect, useMemo, useState } from "react"
 
 import { Button } from "@/components/ui"
 import { toCsv, type CsvColumn } from "@/lib/csv"
+import { getWebhookUrl, setWebhookUrl } from "@/lib/webhook"
 
 import { getConfiguredPackageId } from "@/lib/sui"
 
@@ -31,19 +32,19 @@ const severityRank: Record<Severity, number> = {
 }
 
 const severityClasses: Record<Severity, string> = {
-  none: "border-slate-200 bg-slate-50 text-slate-600",
-  low: "border-emerald-200 bg-emerald-50 text-emerald-700",
-  medium: "border-amber-200 bg-amber-50 text-amber-700",
-  high: "border-orange-200 bg-orange-50 text-orange-700",
-  critical: "border-red-200 bg-red-50 text-red-700",
+  none: "border-slate-200 bg-slate-50 text-slate-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300",
+  low: "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950 dark:text-emerald-300",
+  medium: "border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-300",
+  high: "border-orange-200 bg-orange-50 text-orange-700 dark:border-orange-800 dark:bg-orange-950 dark:text-orange-300",
+  critical: "border-red-200 bg-red-50 text-red-700 dark:border-red-800 dark:bg-red-950 dark:text-red-300",
 }
 
 const statusClasses: Record<ResponseStatus, string> = {
-  new: "bg-sky-50 text-sky-700",
-  triaged: "bg-amber-50 text-amber-700",
-  approved: "bg-emerald-50 text-emerald-700",
-  resolved: "bg-teal-50 text-teal-700",
-  rejected: "bg-slate-100 text-slate-700",
+  new: "bg-sky-50 text-sky-700 dark:bg-sky-950 dark:text-sky-300",
+  triaged: "bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-300",
+  approved: "bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300",
+  resolved: "bg-teal-50 text-teal-700 dark:bg-teal-950 dark:text-teal-300",
+  rejected: "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300",
 }
 
 const responseColumns: CsvColumn<AdminResponseRecord>[] = [
@@ -69,6 +70,8 @@ export function AdminDashboard({ formId }: AdminDashboardProps) {
   const [noteState, setNoteState] = useState<"idle" | "saving" | "saved" | "error">("idle")
   const [now] = useState(() => Date.now())
   const [activeTab, setActiveTab] = useState<AdminTab>("responses")
+  const [webhookUrl, setWebhookUrlState] = useState(() => getWebhookUrl(formId) ?? "")
+  const [webhookSaved, setWebhookSaved] = useState(false)
 
   useEffect(() => {
     let cancelled = false
@@ -163,6 +166,12 @@ export function AdminDashboard({ formId }: AdminDashboardProps) {
     )
   }
 
+  function saveWebhook() {
+    setWebhookUrl(formId, webhookUrl)
+    setWebhookSaved(true)
+    setTimeout(() => setWebhookSaved(false), 3000)
+  }
+
   if (loadState === "loading") {
     return <AdminDashboardShell formId={formId} state="loading" />
   }
@@ -185,6 +194,19 @@ export function AdminDashboard({ formId }: AdminDashboardProps) {
             </h1>
           </div>
           <div className="flex flex-wrap gap-3">
+            <div className="flex items-center gap-2">
+              <input
+                type="url"
+                placeholder="Webhook URL"
+                value={webhookUrl}
+                onChange={(e) => { setWebhookUrlState(e.target.value); setWebhookSaved(false) }}
+                className="h-10 w-48 rounded-lg border border-[var(--color-hairline-soft)] bg-[var(--color-card)] px-3 text-xs text-[var(--color-charcoal)] outline-none focus:border-[var(--color-primary)]"
+              />
+              <Button variant="ghost" className="h-10 rounded-lg px-3 text-xs" onClick={saveWebhook}>
+                <Icon icon="solar:bell-linear" className="h-4 w-4" />
+                {webhookSaved ? "Saved" : "Hook"}
+              </Button>
+            </div>
             <Button variant="outline" className="h-10 rounded-lg px-4 text-sm" onClick={exportJson}>
               <Icon icon="solar:code-file-linear" className="h-5 w-5" />
               JSON
@@ -310,8 +332,8 @@ export function AdminDashboard({ formId }: AdminDashboardProps) {
                 {filteredRecords.map((record) => (
                   <button
                     key={record.index}
-                    className={`grid w-full gap-3 p-4 text-left transition-colors hover:bg-teal-50/50 md:grid-cols-[84px_minmax(0,1fr)_140px_120px] ${
-                      selectedRecord?.index === record.index ? "bg-teal-50" : ""
+                    className={`grid w-full gap-3 p-4 text-left transition-colors hover:bg-teal-50/50 dark:hover:bg-teal-900/20 md:grid-cols-[84px_minmax(0,1fr)_140px_120px] ${
+                      selectedRecord?.index === record.index ? "bg-teal-50 dark:bg-teal-900/30" : ""
                     }`}
                     onClick={() => setSelectedIndex(record.index)}
                   >
@@ -377,7 +399,7 @@ export function AdminDashboard({ formId }: AdminDashboardProps) {
                         [selectedRecord.index]: event.target.value,
                       }))
                     }}
-                    className="min-h-36 resize-y rounded-lg border border-[var(--color-hairline-soft)] bg-white p-3 text-sm text-[var(--color-charcoal)] outline-none focus:border-[var(--color-primary)]"
+                    className="min-h-36 resize-y rounded-lg border border-[var(--color-hairline-soft)] bg-[var(--color-card)] p-3 text-sm text-[var(--color-charcoal)] outline-none focus:border-[var(--color-primary)]"
                   />
                 </label>
                 <div className="flex items-center justify-between gap-3">
@@ -444,8 +466,8 @@ function AdminDashboardShell({ formId, state }: { formId: string; state: "loadin
         <h1 className="mt-3 text-3xl font-bold text-[var(--color-ink)] md:text-5xl">Response triage</h1>
         {state === "loading" ? (
           <div className="mt-8 grid gap-4 lg:grid-cols-[minmax(0,1fr)_420px]">
-            <div className="h-96 animate-pulse rounded-lg bg-white/70" />
-            <div className="h-96 animate-pulse rounded-lg bg-white/70" />
+            <div className="h-96 animate-pulse rounded-lg bg-[var(--color-card)]" />
+            <div className="h-96 animate-pulse rounded-lg bg-[var(--color-card)]" />
           </div>
         ) : (
           <div className="mt-8 rounded-lg border border-[var(--color-hairline-soft)] bg-[var(--color-card)] p-8">
@@ -490,7 +512,7 @@ function SelectFilter({
       <select
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        className="h-10 rounded-lg border border-[var(--color-hairline-soft)] bg-white px-3 text-sm text-[var(--color-charcoal)] outline-none focus:border-[var(--color-primary)]"
+        className="h-10 rounded-lg border border-[var(--color-hairline-soft)] bg-[var(--color-card)] px-3 text-sm text-[var(--color-charcoal)] outline-none focus:border-[var(--color-primary)]"
       >
         {children}
       </select>

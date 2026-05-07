@@ -95,7 +95,7 @@
 }
 
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not(.light) {
     --color-canvas: #0f1f1d;
     --color-card: #1a2e2b;
     --color-ink: #f0fdfa;
@@ -104,6 +104,16 @@
     --background: var(--color-canvas);
     --foreground: var(--color-charcoal);
   }
+}
+
+:root.dark {
+  --color-canvas: #0f1f1d;
+  --color-card: #1a2e2b;
+  --color-ink: #f0fdfa;
+  --color-charcoal: #e2e8f0;
+  --color-hairline: #1f4845;
+  --background: var(--color-canvas);
+  --foreground: var(--color-charcoal);
 }
 
 body {
