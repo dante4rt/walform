@@ -37,7 +37,7 @@ export function CostBadge({ responseCount, epochs = EPOCHS_DEFAULT, className }:
         }
       `}</style>
       <span
-        className={`cost-badge inline-flex items-center gap-1 rounded-full bg-[var(--color-primary-deep)] px-2 py-0.5 text-xs text-teal-100 ${className ?? ""}`}
+        className={`cost-badge inline-flex items-center gap-1 rounded-full bg-[var(--color-primary)] px-2 py-0.5 text-xs font-semibold text-[var(--color-on-primary)] ${className ?? ""}`}
       >
         <span>~{perThousand} / 1k responses · {epochs} epochs{actualLabel}</span>
       </span>

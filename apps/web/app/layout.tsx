@@ -1,41 +1,54 @@
-import type { Metadata, Viewport } from "next";
-import { JetBrains_Mono, Plus_Jakarta_Sans } from "next/font/google";
-import { Providers } from "@/components/providers";
-import "./globals.css";
+import type { Metadata, Viewport } from "next"
+import { Instrument_Serif, JetBrains_Mono, Plus_Jakarta_Sans } from "next/font/google"
+import Script from "next/script"
+import { Navbar } from "@/components/navbar"
+import { Providers } from "@/components/providers"
+import "./globals.css"
 
 const plusJakartaSans = Plus_Jakarta_Sans({
   variable: "--font-plus-jakarta",
   subsets: ["latin"],
-});
+  weight: ["400", "500", "600", "700"],
+})
+
+const instrumentSerif = Instrument_Serif({
+  variable: "--font-instrument-serif",
+  subsets: ["latin"],
+  weight: ["400"],
+  style: ["normal", "italic"],
+})
 
 const jetBrainsMono = JetBrains_Mono({
   variable: "--font-jetbrains-mono",
   subsets: ["latin"],
-});
+  weight: ["400", "500"],
+})
 
 export const metadata: Metadata = {
   title: "Walform — Forms with proof",
-  description:
-    "Walrus-native feedback forms with private, verifiable responses.",
-  manifest: "/manifest.json",
+  description: "Walrus-native feedback forms with private, verifiable responses.",
+  manifest: "/pwa/manifest.json",
+  icons: {
+    icon: [
+      { url: "/pwa/icons/icon-192.png", sizes: "192x192", type: "image/png" },
+      { url: "/pwa/icons/icon-512.png", sizes: "512x512", type: "image/png" },
+    ],
+    apple: [{ url: "/pwa/icons/apple-touch-icon.png", sizes: "180x180", type: "image/png" }],
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
     title: "Walform",
   },
-};
+}
 
 export const viewport: Viewport = {
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#F0FDFA" },
-    { media: "(prefers-color-scheme: dark)", color: "#0F1F1D" },
+    { media: "(prefers-color-scheme: light)", color: "#F7F6F3" },
+    { media: "(prefers-color-scheme: dark)", color: "#111111" },
   ],
-};
+}
 
-/**
- * Inline script runs before React hydrates to set the `dark` class on <html>.
- * This prevents a flash of the wrong theme (FOUC) on page load.
- */
 const themeInitScript = `
 (function(){
   try{
@@ -44,25 +57,28 @@ const themeInitScript = `
     if(d)document.documentElement.classList.add("dark");
   }catch(e){}
 })()
-`;
+`
 
 export default function RootLayout({
   children,
 }: Readonly<{
-  children: React.ReactNode;
+  children: React.ReactNode
 }>) {
   return (
     <html
       lang="en"
-      className={`${plusJakartaSans.variable} ${jetBrainsMono.variable} h-full antialiased`}
+      className={`${plusJakartaSans.variable} ${instrumentSerif.variable} ${jetBrainsMono.variable} h-full antialiased`}
       suppressHydrationWarning
     >
-      <head>
-        <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
-      </head>
       <body className="min-h-full flex flex-col">
-        <Providers>{children}</Providers>
+        <Script id="walform-theme-init" strategy="beforeInteractive">
+          {themeInitScript}
+        </Script>
+        <Providers>
+          <Navbar />
+          {children}
+        </Providers>
       </body>
     </html>
-  );
+  )
 }

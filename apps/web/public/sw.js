@@ -5,7 +5,9 @@ const STATIC_ASSETS = [
   "/",
   "/builder/",
   "/templates/",
-  "/manifest.json",
+  "/pwa/manifest.json",
+  "/pwa/icons/icon-192.png",
+  "/pwa/icons/icon-512.png",
 ];
 
 // Install: pre-cache the app shell.

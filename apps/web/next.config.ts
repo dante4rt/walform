@@ -7,6 +7,9 @@ const workspaceRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)),
 const nextConfig: NextConfig = {
   output: "export",
   trailingSlash: true,
+  images: {
+    unoptimized: true,
+  },
   turbopack: {
     root: workspaceRoot,
   },
