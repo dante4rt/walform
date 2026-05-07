@@ -1,6 +1,11 @@
 "use client"
 
-import { costPerThousandResponses, EPOCHS_DEFAULT, estimateCostMist, formatCostWal } from "@/lib/cost"
+import {
+  costPerThousandResponses,
+  EPOCHS_DEFAULT,
+  estimateCostMist,
+  formatCostWal,
+} from "@/lib/cost"
 
 interface CostBadgeProps {
   /** If provided, shows actual cost for this many responses alongside the per-1k rate. */
@@ -39,7 +44,9 @@ export function CostBadge({ responseCount, epochs = EPOCHS_DEFAULT, className }:
       <span
         className={`cost-badge inline-flex items-center gap-1 rounded-full bg-[var(--color-primary)] px-2 py-0.5 text-xs font-semibold text-[var(--color-on-primary)] ${className ?? ""}`}
       >
-        <span>~{perThousand} / 1k responses · {epochs} epochs{actualLabel}</span>
+        <span>
+          ~{perThousand} / 1k responses · {epochs} epochs{actualLabel}
+        </span>
       </span>
     </>
   )

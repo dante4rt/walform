@@ -42,10 +42,7 @@ export interface StarRatingField extends BaseField {
   max: number
 }
 
-export type FormField =
-  | BaseField
-  | OptionField
-  | StarRatingField
+export type FormField = BaseField | OptionField | StarRatingField
 
 export interface PolicyConfig {
   type: PolicyType

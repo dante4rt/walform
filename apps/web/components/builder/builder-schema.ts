@@ -111,7 +111,11 @@ export function getNextFieldIndex(fields: BuilderField[]): number {
   return usedIndexes.length === 0 ? 1 : Math.max(...usedIndexes) + 1
 }
 
-export function moveField(fields: BuilderField[], activeId: string, targetId: string): BuilderField[] {
+export function moveField(
+  fields: BuilderField[],
+  activeId: string,
+  targetId: string,
+): BuilderField[] {
   const activeIndex = fields.findIndex((field) => field.id === activeId)
   const targetIndex = fields.findIndex((field) => field.id === targetId)
 
@@ -152,7 +156,10 @@ export function normalizeField(field: BuilderField): FormField {
   return baseField
 }
 
-export function buildWalformSchema(values: BuilderFormValues, fields: BuilderField[]): WalformSchema {
+export function buildWalformSchema(
+  values: BuilderFormValues,
+  fields: BuilderField[],
+): WalformSchema {
   const schema = {
     version: 1,
     title: values.title.trim(),

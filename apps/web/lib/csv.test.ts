@@ -9,7 +9,7 @@ describe("csv lib", () => {
         id: "response-1",
         submittedAt: new Date("2026-05-07T03:20:00.000Z"),
         severity: "critical",
-        answer: "Payment breaks, then says \"retry\"",
+        answer: 'Payment breaks, then says "retry"',
         meta: { browser: "Chrome", tags: ["checkout", "wallet"] },
       },
     ]
@@ -28,8 +28,8 @@ describe("csv lib", () => {
         "response-1",
         "2026-05-07T03:20:00.000Z",
         "critical",
-        "Payment breaks, then says \"retry\"",
-        "{\"browser\":\"Chrome\",\"tags\":[\"checkout\",\"wallet\"]}",
+        'Payment breaks, then says "retry"',
+        '{"browser":"Chrome","tags":["checkout","wallet"]}',
       ],
     ])
   })

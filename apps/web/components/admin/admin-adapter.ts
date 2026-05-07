@@ -23,7 +23,12 @@ export interface AdminDataAdapter {
   readEncryptedResponse(blobId: string): Promise<Uint8Array>
   decryptResponse(ciphertext: Uint8Array, ref: ResponseRefWithIndex): Promise<WalformResponse>
   readNote(blobId: string | null): Promise<string>
-  saveNote(input: { formId: string; responseIndex: number; ownerKeyId: string; note: string }): Promise<string>
+  saveNote(input: {
+    formId: string
+    responseIndex: number
+    ownerKeyId: string
+    note: string
+  }): Promise<string>
 }
 
 export async function loadAdminRecords(formId: string): Promise<AdminResponseRecord[]> {
@@ -105,7 +110,10 @@ export const demoAdminAdapter: AdminDataAdapter = {
       return ""
     }
 
-    return localStorage.getItem(`walform-demo-note:${blobId}`) ?? "Needs owner review before bounty approval."
+    return (
+      localStorage.getItem(`walform-demo-note:${blobId}`) ??
+      "Needs owner review before bounty approval."
+    )
   },
   async saveNote(input) {
     const ciphertext = btoa(`${input.ownerKeyId}:${input.note}`)

@@ -52,11 +52,7 @@ function mistToWal(mist: bigint): string {
 
 function isApprovable(record: AdminResponseRecord): boolean {
   const { status, severity, submitter } = record.ref
-  return (
-    (status === "new" || status === "triaged") &&
-    submitter !== null &&
-    severity !== "none"
-  )
+  return (status === "new" || status === "triaged") && submitter !== null && severity !== "none"
 }
 
 // Detect if the form is running in anon mode: no single response has a
@@ -77,9 +73,17 @@ const SEVERITY_COLORS: Record<Severity, string> = {
 // Sub-components
 // ---------------------------------------------------------------------------
 
-function SectionCard({ children, className = "" }: { children: React.ReactNode; className?: string }) {
+function SectionCard({
+  children,
+  className = "",
+}: {
+  children: React.ReactNode
+  className?: string
+}) {
   return (
-    <div className={`rounded-[var(--radius-card)] border border-[var(--color-hairline-soft)] bg-[var(--color-card)] p-4 ${className}`}>
+    <div
+      className={`rounded-[var(--radius-card)] border border-[var(--color-hairline-soft)] bg-[var(--color-card)] p-4 ${className}`}
+    >
       {children}
     </div>
   )
@@ -88,7 +92,9 @@ function SectionCard({ children, className = "" }: { children: React.ReactNode; 
 function FieldRow({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <label className="grid gap-1.5">
-      <span className="text-xs font-semibold uppercase tracking-wide text-[var(--color-slate)]">{label}</span>
+      <span className="text-xs font-semibold uppercase tracking-wide text-[var(--color-slate)]">
+        {label}
+      </span>
       {children}
     </label>
   )
@@ -117,7 +123,9 @@ function WalInput({
         disabled={disabled}
         className="w-full bg-transparent text-sm text-[var(--color-ink)] placeholder-[var(--color-stone)] outline-none disabled:opacity-50"
       />
-      <span className="shrink-0 font-mono text-xs font-semibold text-[var(--color-primary)]">WAL</span>
+      <span className="shrink-0 font-mono text-xs font-semibold text-[var(--color-primary)]">
+        WAL
+      </span>
     </div>
   )
 }
@@ -235,13 +243,16 @@ export function BountyPanel({ formId, records, packageId }: BountyPanelProps) {
       {/* Anon mode warning */}
       {anonMode && (
         <div className="flex items-start gap-3 rounded-[var(--radius-card)] border border-[var(--color-warning)]/30 bg-[var(--color-warning)]/10 px-4 py-3">
-          <Icon icon="solar:danger-triangle-linear" className="mt-0.5 h-5 w-5 shrink-0 text-[var(--color-warning)]" />
+          <Icon
+            icon="solar:danger-triangle-linear"
+            className="mt-0.5 h-5 w-5 shrink-0 text-[var(--color-warning)]"
+          />
           <div className="text-sm text-[var(--color-charcoal)]">
-            <span className="font-semibold">Bounty unavailable in anonymous mode.</span>{" "}
-            All submissions were collected without wallet addresses. Bounty payouts require a
-            submitter address on-chain. Switch the form to{" "}
-            <span className="font-mono text-[var(--color-warning)]">wallet</span> submission mode to enable
-            bounties.
+            <span className="font-semibold">Bounty unavailable in anonymous mode.</span> All
+            submissions were collected without wallet addresses. Bounty payouts require a submitter
+            address on-chain. Switch the form to{" "}
+            <span className="font-mono text-[var(--color-warning)]">wallet</span> submission mode to
+            enable bounties.
           </div>
         </div>
       )}
@@ -258,7 +269,9 @@ export function BountyPanel({ formId, records, packageId }: BountyPanelProps) {
               <span className="font-mono text-3xl font-bold text-[var(--color-ink)]">
                 {mistToWal(poolBalance)}
               </span>
-              <span className="font-mono text-sm font-semibold text-[var(--color-primary)]">WAL</span>
+              <span className="font-mono text-sm font-semibold text-[var(--color-primary)]">
+                WAL
+              </span>
             </div>
             <p className="mt-1 font-mono text-xs text-[var(--color-stone)]">
               {poolBalance.toLocaleString()} MIST
@@ -300,10 +313,7 @@ export function BountyPanel({ formId, records, packageId }: BountyPanelProps) {
 
         {depositDraft && (
           <div className="mt-4">
-            <TxDraftPanel
-              draft={depositDraft}
-              onClose={() => setDepositDraft(null)}
-            />
+            <TxDraftPanel draft={depositDraft} onClose={() => setDepositDraft(null)} />
           </div>
         )}
       </SectionCard>
@@ -345,13 +355,23 @@ export function BountyPanel({ formId, records, packageId }: BountyPanelProps) {
 
         {anonMode ? (
           <div className="rounded-[var(--radius-button)] border border-[var(--color-hairline-soft)] bg-[var(--color-canvas)] p-6 text-center">
-            <Icon icon="solar:user-cross-linear" className="mx-auto h-8 w-8 text-[var(--color-stone)]" />
-            <p className="mt-2 text-sm text-[var(--color-slate)]">No wallet addresses — bounty disabled.</p>
+            <Icon
+              icon="solar:user-cross-linear"
+              className="mx-auto h-8 w-8 text-[var(--color-stone)]"
+            />
+            <p className="mt-2 text-sm text-[var(--color-slate)]">
+              No wallet addresses — bounty disabled.
+            </p>
           </div>
         ) : approvableRecords.length === 0 ? (
           <div className="rounded-[var(--radius-button)] border border-[var(--color-hairline-soft)] bg-[var(--color-canvas)] p-6 text-center">
-            <Icon icon="solar:inbox-line-linear" className="mx-auto h-8 w-8 text-[var(--color-stone)]" />
-            <p className="mt-2 text-sm text-[var(--color-slate)]">No eligible responses right now.</p>
+            <Icon
+              icon="solar:inbox-line-linear"
+              className="mx-auto h-8 w-8 text-[var(--color-stone)]"
+            />
+            <p className="mt-2 text-sm text-[var(--color-slate)]">
+              No eligible responses right now.
+            </p>
             <p className="mt-1 text-xs text-[var(--color-stone)]">
               Responses must be new/triaged with a severity and a wallet submitter.
             </p>
@@ -360,9 +380,10 @@ export function BountyPanel({ formId, records, packageId }: BountyPanelProps) {
           <div className="flex flex-col gap-3">
             {approvableRecords.map((record) => {
               const draft = approvalDrafts[record.index]
-              const tierAmount = record.ref.severity !== "none"
-                ? tiers[record.ref.severity as keyof BountyTiers] ?? "—"
-                : "—"
+              const tierAmount =
+                record.ref.severity !== "none"
+                  ? (tiers[record.ref.severity as keyof BountyTiers] ?? "—")
+                  : "—"
 
               return (
                 <div
@@ -422,9 +443,8 @@ function animateTextSwap(el: HTMLElement | null, next: string) {
   if (!el) return
 
   const dur =
-    parseFloat(
-      getComputedStyle(document.documentElement).getPropertyValue("--text-swap-dur"),
-    ) || 200
+    parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--text-swap-dur")) ||
+    200
 
   el.classList.add("is-exit")
   setTimeout(() => {

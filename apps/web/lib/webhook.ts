@@ -57,10 +57,7 @@ export function setWebhookUrl(formId: string, url: string): void {
  * Fire a webhook notification. Non-blocking — errors are returned, not thrown.
  * Retries up to MAX_RETRIES times on network failure.
  */
-export async function fireWebhook(
-  url: string,
-  payload: WebhookPayload,
-): Promise<WebhookResult> {
+export async function fireWebhook(url: string, payload: WebhookPayload): Promise<WebhookResult> {
   for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
     try {
       const controller = new AbortController()

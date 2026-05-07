@@ -10,6 +10,7 @@
     "build": "pnpm -r build",
     "typecheck": "pnpm -r typecheck",
     "lint": "pnpm -r lint",
+    "format": "prettier --write \"**/*.{ts,tsx,mjs,json,css,md}\" --ignore-path .gitignore",
     "test": "pnpm -r test",
     "move:build": "cd packages/contracts && sui move build",
     "move:test": "cd packages/contracts && sui move test",

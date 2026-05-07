@@ -67,7 +67,11 @@ function FormIdChip({ formId }: { formId: string }) {
         type="button"
       >
         {copied ? (
-          <Icon aria-hidden icon="solar:check-circle-linear" className="size-3.5 text-[var(--color-success)]" />
+          <Icon
+            aria-hidden
+            icon="solar:check-circle-linear"
+            className="size-3.5 text-[var(--color-success)]"
+          />
         ) : (
           <Icon aria-hidden icon="solar:copy-linear" className="size-3.5" />
         )}
@@ -156,7 +160,7 @@ export function PublicForm({ formId, schema }: PublicFormProps) {
         answers: normalizeAnswers(schema.fields, answers),
         severity: severity === "none" ? null : severity,
         submissionMode,
-        submitter: submissionMode === "wallet" ? currentAccount?.address ?? null : null,
+        submitter: submissionMode === "wallet" ? (currentAccount?.address ?? null) : null,
         rating: extractRating(schema.fields, answers),
       })
       const packageId = getConfiguredPackageId()
@@ -412,7 +416,9 @@ function FieldControl({
         {field.required ? <span className="text-[var(--color-error)]"> *</span> : null}
       </span>
       {renderInput(field, value, onChange)}
-      {error ? <span className="text-xs font-medium text-[var(--color-error)]">{error}</span> : null}
+      {error ? (
+        <span className="text-xs font-medium text-[var(--color-error)]">{error}</span>
+      ) : null}
     </label>
   )
 }
@@ -458,15 +464,18 @@ function renderInput(
     return (
       <div className="grid gap-2">
         {options.map((option) => (
-          <span className="flex items-center gap-2 text-sm text-[var(--color-charcoal)]" key={option}>
+          <span
+            className="flex items-center gap-2 text-sm text-[var(--color-charcoal)]"
+            key={option}
+          >
             <input
               checked={selected.includes(option)}
               className="size-5 accent-[var(--color-primary)]"
               onChange={(event) =>
                 onChange(
-                  event.target.checked ?
-                    [...selected, option]
-                  : selected.filter((selectedOption) => selectedOption !== option),
+                  event.target.checked
+                    ? [...selected, option]
+                    : selected.filter((selectedOption) => selectedOption !== option),
                 )
               }
               type="checkbox"

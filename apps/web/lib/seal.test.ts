@@ -73,9 +73,7 @@ describe("seal lib", () => {
     })
     const options = { data: new Uint8Array([1]) } as Parameters<typeof decryptForForm>[1]
 
-    await expect(decryptForForm(client, options)).rejects.toBeInstanceOf(
-      WalformSealRateLimitError,
-    )
+    await expect(decryptForForm(client, options)).rejects.toBeInstanceOf(WalformSealRateLimitError)
     await expect(decryptForForm(client, options)).rejects.toMatchObject({
       cause: rateLimitError,
     })

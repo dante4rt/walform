@@ -13,7 +13,8 @@ export function CostPanel({ responseCount }: CostPanelProps) {
   const quiltActive = shouldUseQuilt(responseCount)
 
   // Bar widths: solo is always 100%, quilted is proportional.
-  const quiltedBarPct = responseCount > 0 ? Math.max(4, (estimate.quilted / estimate.soloBlobs) * 100) : 4
+  const quiltedBarPct =
+    responseCount > 0 ? Math.max(4, (estimate.quilted / estimate.soloBlobs) * 100) : 4
 
   return (
     <div className="flex flex-col gap-6">
@@ -21,8 +22,12 @@ export function CostPanel({ responseCount }: CostPanelProps) {
         <h2 className="text-lg font-semibold text-[var(--color-ink)]">Storage cost estimate</h2>
         <p className="mt-1 text-sm text-[var(--color-slate)]">
           Comparative cost in abstract storage units.{" "}
-          <span className="font-medium text-[var(--color-charcoal)]">5× compression</span> assumed for quilt batching
-          — see <code className="rounded bg-[var(--color-hairline-soft)] px-1 py-0.5 font-mono text-xs">lib/quilts.ts</code> for the model.
+          <span className="font-medium text-[var(--color-charcoal)]">5× compression</span> assumed
+          for quilt batching — see{" "}
+          <code className="rounded bg-[var(--color-hairline-soft)] px-1 py-0.5 font-mono text-xs">
+            lib/quilts.ts
+          </code>{" "}
+          for the model.
         </p>
       </div>
 
@@ -76,7 +81,9 @@ export function CostPanel({ responseCount }: CostPanelProps) {
         className="rounded-lg border border-[var(--color-hairline-soft)] bg-[var(--color-card)] p-4"
         aria-label="Cost ratio chart"
       >
-        <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-[var(--color-slate)]">Cost ratio</p>
+        <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-[var(--color-slate)]">
+          Cost ratio
+        </p>
         <div className="flex flex-col gap-3">
           <div>
             <div className="mb-1 flex items-center justify-between text-xs text-[var(--color-slate)]">
@@ -124,14 +131,17 @@ export function CostPanel({ responseCount }: CostPanelProps) {
           <p className="mt-0.5">
             {quiltActive ? (
               <>
-                Quilt batching is <span className="font-semibold text-emerald-700">active</span> — {responseCount}{" "}
-                responses queued, threshold is ≥{QUILT_THRESHOLD}.
+                Quilt batching is <span className="font-semibold text-emerald-700">active</span> —{" "}
+                {responseCount} responses queued, threshold is ≥{QUILT_THRESHOLD}.
               </>
             ) : (
               <>
                 Quilt activates when ≥{QUILT_THRESHOLD} responses are queued. Currently{" "}
                 <span className="font-semibold">{responseCount}</span> — need{" "}
-                <span className="font-semibold">{Math.max(0, QUILT_THRESHOLD - responseCount)}</span> more.
+                <span className="font-semibold">
+                  {Math.max(0, QUILT_THRESHOLD - responseCount)}
+                </span>{" "}
+                more.
               </>
             )}
           </p>

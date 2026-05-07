@@ -1,4 +1,12 @@
-export type CsvValue = string | number | boolean | null | undefined | Date | Record<string, unknown> | unknown[]
+export type CsvValue =
+  | string
+  | number
+  | boolean
+  | null
+  | undefined
+  | Date
+  | Record<string, unknown>
+  | unknown[]
 
 export interface CsvColumn<T> {
   key: string
@@ -26,10 +34,10 @@ export function parseCsv(csv: string): string[][] {
     const next = csv[index + 1]
 
     if (quoted) {
-      if (char === "\"" && next === "\"") {
-        cell += "\""
+      if (char === '"' && next === '"') {
+        cell += '"'
         index += 1
-      } else if (char === "\"") {
+      } else if (char === '"') {
         quoted = false
       } else {
         cell += char
@@ -37,7 +45,7 @@ export function parseCsv(csv: string): string[][] {
       continue
     }
 
-    if (char === "\"") {
+    if (char === '"') {
       quoted = true
     } else if (char === ",") {
       row.push(cell)
@@ -79,5 +87,5 @@ function escapeCsvCell(value: string) {
     return value
   }
 
-  return `"${value.replaceAll("\"", "\"\"")}"`
+  return `"${value.replaceAll('"', '""')}"`
 }

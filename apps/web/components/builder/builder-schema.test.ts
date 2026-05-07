@@ -14,7 +14,16 @@ describe("builder schema helpers", () => {
   it("creates a starter form with all supported field types and stable ids", () => {
     const fields = createInitialFields()
 
-    expect(fields.map((field) => field.id)).toEqual(["f1", "f2", "f3", "f4", "f5", "f6", "f7", "f8"])
+    expect(fields.map((field) => field.id)).toEqual([
+      "f1",
+      "f2",
+      "f3",
+      "f4",
+      "f5",
+      "f6",
+      "f7",
+      "f8",
+    ])
     expect(fields.map((field) => field.type)).toEqual([
       "rich_text",
       "dropdown",

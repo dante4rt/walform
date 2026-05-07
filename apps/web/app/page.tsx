@@ -123,7 +123,15 @@ const moveFunctions = [
   ["bounty::claim", "Claim bounty escrow"],
 ]
 
-function FieldPreview({ label, meta, required }: { label: string; meta: string; required?: boolean }) {
+function FieldPreview({
+  label,
+  meta,
+  required,
+}: {
+  label: string
+  meta: string
+  required?: boolean
+}) {
   return (
     <div className="rounded-[var(--radius-card)] border border-[var(--color-hairline-soft)] bg-[var(--color-card)] p-4 shadow-[var(--shadow-card)]">
       <div className="flex items-start justify-between gap-3">
@@ -355,7 +363,10 @@ export default function Home() {
               <h3 className="text-base font-bold text-[var(--color-ink)]">Pain points</h3>
               <ul className="mt-4 grid gap-3">
                 {painPoints.map((pain) => (
-                  <li key={pain} className="flex items-center gap-3 text-sm text-[var(--color-charcoal)]">
+                  <li
+                    key={pain}
+                    className="flex items-center gap-3 text-sm text-[var(--color-charcoal)]"
+                  >
                     <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[var(--color-tint-peach)] text-[var(--color-error)]">
                       <Icon icon="solar:danger-circle-linear" width={16} height={16} />
                     </span>
@@ -384,7 +395,12 @@ export default function Home() {
               className="scroll-reveal-stagger rounded-[var(--radius-card)] border border-[var(--color-hairline-soft)] bg-[var(--color-card)] p-5 shadow-[var(--shadow-card)]"
               style={{ transitionDelay: `${index * 70}ms` }}
             >
-              <Icon icon={item.icon} className="text-[var(--color-primary)]" width={28} height={28} />
+              <Icon
+                icon={item.icon}
+                className="text-[var(--color-primary)]"
+                width={28}
+                height={28}
+              />
               <h3 className="mt-4 text-sm font-bold text-[var(--color-ink)]">{item.title}</h3>
               <p className="mt-2 text-xs leading-5 text-[var(--color-slate)]">{item.copy}</p>
             </article>
@@ -404,7 +420,9 @@ export default function Home() {
                 className="scroll-reveal-stagger rounded-[var(--radius-card)] border border-[var(--color-hairline-soft)] bg-[var(--color-canvas)] p-5"
                 style={{ transitionDelay: `${index * 70}ms` }}
               >
-                <span className="font-mono text-3xl font-bold text-[var(--color-primary)]">{num}</span>
+                <span className="font-mono text-3xl font-bold text-[var(--color-primary)]">
+                  {num}
+                </span>
                 <h3 className="mt-4 text-sm font-bold text-[var(--color-ink)]">{title}</h3>
                 <p className="mt-2 text-xs leading-5 text-[var(--color-slate)]">{copy}</p>
               </article>
@@ -421,8 +439,13 @@ export default function Home() {
           </p>
           <div className="mt-6 grid gap-3 sm:grid-cols-2">
             {moveFunctions.map(([name, desc]) => (
-              <div key={name} className="rounded-[var(--radius-card)] border border-[var(--color-hairline-soft)] bg-[var(--color-card)] p-4">
-                <code className="font-mono text-xs font-bold text-[var(--color-primary)]">{name}</code>
+              <div
+                key={name}
+                className="rounded-[var(--radius-card)] border border-[var(--color-hairline-soft)] bg-[var(--color-card)] p-4"
+              >
+                <code className="font-mono text-xs font-bold text-[var(--color-primary)]">
+                  {name}
+                </code>
                 <p className="mt-2 text-xs text-[var(--color-slate)]">{desc}</p>
               </div>
             ))}
@@ -430,7 +453,9 @@ export default function Home() {
         </div>
         <div className="scroll-reveal rounded-[var(--radius-card)] border border-[var(--color-hairline-soft)] bg-[var(--color-card)] p-5 shadow-[var(--shadow-card)]">
           <div className="mb-4 flex items-center justify-between border-b border-[var(--color-hairline-soft)] pb-3">
-            <span className="font-mono text-xs font-bold text-[var(--color-primary)]">TypeScript</span>
+            <span className="font-mono text-xs font-bold text-[var(--color-primary)]">
+              TypeScript
+            </span>
             <span className="rounded-[var(--radius-button)] border border-[var(--color-hairline-soft)] px-2 py-1 text-[10px] font-bold text-[var(--color-slate)]">
               SDK preview
             </span>
@@ -461,12 +486,18 @@ await walform.submit({ formId, blobId, metadata })`}</code>
             </p>
           </div>
           <div className="rounded-[var(--radius-card)] border border-[var(--color-hairline-soft)] bg-[var(--color-tint-mint)] p-5">
-            <p className="font-mono text-2xl font-bold text-[var(--color-primary-deep)]">~0.002 WAL</p>
+            <p className="font-mono text-2xl font-bold text-[var(--color-primary-deep)]">
+              ~0.002 WAL
+            </p>
             <p className="text-xs font-semibold text-[var(--color-slate)]">per response</p>
-            <p className="mt-1 text-[11px] text-[var(--color-stone)]">Example single-field text response</p>
+            <p className="mt-1 text-[11px] text-[var(--color-stone)]">
+              Example single-field text response
+            </p>
           </div>
           <div className="rounded-[var(--radius-card)] border border-[var(--color-hairline-soft)] bg-[var(--color-tint-sky)] p-5">
-            <p className="font-mono text-2xl font-bold text-[var(--color-primary-deep)]">~0.08 WAL</p>
+            <p className="font-mono text-2xl font-bold text-[var(--color-primary-deep)]">
+              ~0.08 WAL
+            </p>
             <p className="text-xs font-semibold text-[var(--color-slate)]">per 1,000 responses</p>
             <p className="mt-1 text-[11px] text-[var(--color-stone)]">Example mix of fields</p>
           </div>
@@ -481,8 +512,8 @@ await walform.submit({ formId, blobId, metadata })`}</code>
               Start collecting feedback that actually proves something
             </h2>
             <p className="landing-cta-copy mt-4 max-w-lg text-sm leading-6 text-[var(--color-charcoal)]">
-              No accounts. No databases. Encrypted blobs, verifiable Sui objects, and bounty
-              escrow for reputation.
+              No accounts. No databases. Encrypted blobs, verifiable Sui objects, and bounty escrow
+              for reputation.
             </p>
             <div className="mt-7 flex flex-col gap-3 sm:flex-row">
               <Link className="btn-primary" href="/builder/">

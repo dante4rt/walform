@@ -1,4 +1,9 @@
-import { responseRefSchema, walformResponseSchema, type ResponseRef, type WalformResponse } from "@walform/shared"
+import {
+  responseRefSchema,
+  walformResponseSchema,
+  type ResponseRef,
+  type WalformResponse,
+} from "@walform/shared"
 
 import { createDemoTxDigest, createReceiptMintDraft, createSubmitResponseMoveDraft } from "./sui"
 
@@ -79,9 +84,8 @@ export async function prepareFormResponse(input: SubmitFormInput): Promise<Prepa
     response,
     rating: input.rating,
   })
-  const receipt =
-    response.submitter ?
-      createReceiptMintDraft({
+  const receipt = response.submitter
+    ? createReceiptMintDraft({
         packageId: PACKAGE_ID,
         formId: input.formId,
         responseIndex,

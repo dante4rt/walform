@@ -116,19 +116,29 @@ async function getOrCreateDraftKey(formId: string): Promise<CryptoKey> {
 
   if (stored) {
     const raw = base64ToBytes(stored)
-    return crypto.subtle.importKey("raw", toArrayBuffer(raw), "AES-GCM", false, ["encrypt", "decrypt"])
+    return crypto.subtle.importKey("raw", toArrayBuffer(raw), "AES-GCM", false, [
+      "encrypt",
+      "decrypt",
+    ])
   }
 
   const keyBytes = crypto.getRandomValues(new Uint8Array(32))
   sessionStorage.setItem(storageKey, bytesToBase64(keyBytes))
-  return crypto.subtle.importKey("raw", toArrayBuffer(keyBytes), "AES-GCM", false, ["encrypt", "decrypt"])
+  return crypto.subtle.importKey("raw", toArrayBuffer(keyBytes), "AES-GCM", false, [
+    "encrypt",
+    "decrypt",
+  ])
 }
 
 async function encryptDraft(record: DraftRecord): Promise<EncryptedDraft> {
   const key = await getOrCreateDraftKey(record.formId)
   const iv = crypto.getRandomValues(new Uint8Array(12))
   const plaintext = new TextEncoder().encode(JSON.stringify(record))
-  const ciphertext = await crypto.subtle.encrypt({ name: "AES-GCM", iv: toArrayBuffer(iv) }, key, toArrayBuffer(plaintext))
+  const ciphertext = await crypto.subtle.encrypt(
+    { name: "AES-GCM", iv: toArrayBuffer(iv) },
+    key,
+    toArrayBuffer(plaintext),
+  )
 
   return {
     formId: record.formId,
@@ -142,7 +152,11 @@ async function decryptDraft(encrypted: EncryptedDraft): Promise<DraftRecord> {
   const key = await getOrCreateDraftKey(encrypted.formId)
   const ciphertext = base64ToBytes(encrypted.data)
   const iv = base64ToBytes(encrypted.iv)
-  const plaintext = await crypto.subtle.decrypt({ name: "AES-GCM", iv: toArrayBuffer(iv) }, key, toArrayBuffer(ciphertext))
+  const plaintext = await crypto.subtle.decrypt(
+    { name: "AES-GCM", iv: toArrayBuffer(iv) },
+    key,
+    toArrayBuffer(ciphertext),
+  )
   return JSON.parse(new TextDecoder().decode(plaintext))
 }
 

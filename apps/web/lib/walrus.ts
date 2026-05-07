@@ -104,7 +104,11 @@ export async function uploadQuilt(input: UploadQuiltInput) {
   } catch (error) {
     if (error instanceof RetryableWalrusClientError) {
       api.reset?.()
-      throw new WalformWalrusError("Walrus quilt upload can be retried after client reset.", error, true)
+      throw new WalformWalrusError(
+        "Walrus quilt upload can be retried after client reset.",
+        error,
+        true,
+      )
     }
 
     throw new WalformWalrusError("Walrus quilt upload failed.", error, false)
