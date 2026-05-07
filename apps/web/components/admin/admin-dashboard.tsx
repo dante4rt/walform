@@ -8,6 +8,7 @@ import { useEffect, useMemo, useState } from "react"
 import { Button } from "@/components/ui"
 import { toCsv, type CsvColumn } from "@/lib/csv"
 import { getWebhookUrl, setWebhookUrl } from "@/lib/webhook"
+import { formatFormId } from "@/lib/utils"
 
 import { getConfiguredPackageId } from "@/lib/sui"
 
@@ -32,25 +33,34 @@ const severityRank: Record<Severity, number> = {
 }
 
 const severityClasses: Record<Severity, string> = {
-  none: "border-slate-200 bg-slate-50 text-slate-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300",
-  low: "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950 dark:text-emerald-300",
-  medium: "border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-300",
-  high: "border-orange-200 bg-orange-50 text-orange-700 dark:border-orange-800 dark:bg-orange-950 dark:text-orange-300",
-  critical: "border-red-200 bg-red-50 text-red-700 dark:border-red-800 dark:bg-red-950 dark:text-red-300",
+  none: "border-[var(--color-hairline-soft)] bg-[var(--color-canvas)] text-[var(--color-slate)]",
+  low: "border-[var(--color-hairline-soft)] bg-[var(--color-tint-sky)] text-[var(--color-charcoal)]",
+  medium:
+    "border-[var(--color-accent)]/20 bg-[var(--color-tint-cream)] text-[var(--color-accent-deep)]",
+  high: "border-[var(--color-accent)]/30 bg-[var(--color-tint-peach)] text-[var(--color-accent-deep)]",
+  critical: "border-[var(--color-error)]/30 bg-[var(--color-error)]/5 text-[var(--color-error)]",
 }
 
 const statusClasses: Record<ResponseStatus, string> = {
-  new: "bg-sky-50 text-sky-700 dark:bg-sky-950 dark:text-sky-300",
-  triaged: "bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-300",
-  approved: "bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300",
-  resolved: "bg-teal-50 text-teal-700 dark:bg-teal-950 dark:text-teal-300",
-  rejected: "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300",
+  new: "bg-[var(--color-tint-sky)] text-[var(--color-charcoal)]",
+  triaged: "bg-[var(--color-tint-cream)] text-[var(--color-accent-deep)]",
+  approved: "bg-[var(--color-tint-mint)] text-[var(--color-charcoal)]",
+  resolved: "bg-[var(--color-primary)]/8 text-[var(--color-primary)]",
+  rejected: "bg-[var(--color-canvas)] text-[var(--color-slate)]",
 }
 
 const responseColumns: CsvColumn<AdminResponseRecord>[] = [
   { key: "index", header: "Index", getValue: (record) => record.index },
-  { key: "submitted_at", header: "Submitted At", getValue: (record) => new Date(record.ref.timestamp_ms) },
-  { key: "submitter", header: "Submitter", getValue: (record) => record.ref.submitter ?? "signed anonymous" },
+  {
+    key: "submitted_at",
+    header: "Submitted At",
+    getValue: (record) => new Date(record.ref.timestamp_ms),
+  },
+  {
+    key: "submitter",
+    header: "Submitter",
+    getValue: (record) => record.ref.submitter ?? "signed anonymous",
+  },
   { key: "severity", header: "Severity", getValue: (record) => record.ref.severity },
   { key: "status", header: "Status", getValue: (record) => record.ref.status },
   { key: "blob_id", header: "Blob ID", getValue: (record) => record.ref.blob_id },
@@ -98,7 +108,11 @@ export function AdminDashboard({ formId }: AdminDashboardProps) {
 
   const filteredRecords = useMemo(() => {
     const minimumTimestamp =
-      dateFilter === "24h" ? now - 24 * 60 * 60 * 1000 : dateFilter === "7d" ? now - 7 * 24 * 60 * 60 * 1000 : 0
+      dateFilter === "24h"
+        ? now - 24 * 60 * 60 * 1000
+        : dateFilter === "7d"
+          ? now - 7 * 24 * 60 * 60 * 1000
+          : 0
 
     return records
       .filter((record) => severity === "all" || record.ref.severity === severity)
@@ -110,13 +124,16 @@ export function AdminDashboard({ formId }: AdminDashboardProps) {
       })
   }, [dateFilter, now, records, severity, status])
 
-  const selectedRecord = filteredRecords.find((record) => record.index === selectedIndex) ?? filteredRecords[0]
+  const selectedRecord =
+    filteredRecords.find((record) => record.index === selectedIndex) ?? filteredRecords[0]
   const answerEntries = selectedRecord ? Object.entries(selectedRecord.response.answers) : []
   const noteDraft = selectedRecord ? (noteDrafts[selectedRecord.index] ?? selectedRecord.note) : ""
 
   const metrics = useMemo(() => {
     const criticalCount = records.filter((record) => record.ref.severity === "critical").length
-    const openCount = records.filter((record) => record.ref.status === "new" || record.ref.status === "triaged").length
+    const openCount = records.filter(
+      (record) => record.ref.status === "new" || record.ref.status === "triaged",
+    ).length
     const latestTimestamp = Math.max(...records.map((record) => record.ref.timestamp_ms), 0)
 
     return { criticalCount, openCount, latestTimestamp }
@@ -155,7 +172,11 @@ export function AdminDashboard({ formId }: AdminDashboardProps) {
   }
 
   function exportCsv() {
-    downloadText(`walform-${formId}-responses.csv`, "text/csv;charset=utf-8", toCsv(filteredRecords, responseColumns))
+    downloadText(
+      `walform-${formId}-responses.csv`,
+      "text/csv;charset=utf-8",
+      toCsv(filteredRecords, responseColumns),
+    )
   }
 
   function exportJson() {
@@ -182,37 +203,56 @@ export function AdminDashboard({ formId }: AdminDashboardProps) {
 
   return (
     <main className="min-h-[100dvh] bg-[var(--color-canvas)] px-4 py-6 text-[var(--color-charcoal)] sm:px-6 lg:px-8">
-      <div className="mx-auto flex max-w-7xl flex-col gap-6">
+      <div className="mx-auto flex max-w-7xl flex-col gap-8">
+        {/* Header */}
         <header className="flex flex-col gap-5 border-b border-[var(--color-hairline)] pb-6 lg:flex-row lg:items-end lg:justify-between">
           <div>
-            <div className="flex items-center gap-2 font-mono text-xs uppercase tracking-[0.16em] text-[var(--color-slate)]">
-              <Icon icon="solar:shield-keyhole-linear" className="h-4 w-4" />
-              {formId}
+            <div className="flex items-center gap-2">
+              <Icon
+                icon="solar:shield-keyhole-linear"
+                className="h-4 w-4 text-[var(--color-slate)]"
+              />
+              <FormIdPill formId={formId} />
             </div>
-            <h1 className="mt-3 text-3xl font-bold leading-tight text-[var(--color-ink)] md:text-5xl">
+            <h1 className="mt-2 text-3xl font-bold leading-tight text-[var(--color-ink)] md:text-5xl">
               Response triage
             </h1>
           </div>
-          <div className="flex flex-wrap gap-3">
-            <div className="flex items-center gap-2">
-              <input
-                type="url"
-                placeholder="Webhook URL"
-                value={webhookUrl}
-                onChange={(e) => { setWebhookUrlState(e.target.value); setWebhookSaved(false) }}
-                className="h-10 w-48 rounded-lg border border-[var(--color-hairline-soft)] bg-[var(--color-card)] px-3 text-xs text-[var(--color-charcoal)] outline-none focus:border-[var(--color-primary)]"
-              />
-              <Button variant="ghost" className="h-10 rounded-lg px-3 text-xs" onClick={saveWebhook}>
-                <Icon icon="solar:bell-linear" className="h-4 w-4" />
-                {webhookSaved ? "Saved" : "Hook"}
-              </Button>
-            </div>
-            <Button variant="outline" className="h-10 rounded-lg px-4 text-sm" onClick={exportJson}>
-              <Icon icon="solar:code-file-linear" className="h-5 w-5" />
+          <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end sm:gap-3">
+            <label className="grid gap-1">
+              <span className="text-[11px] font-semibold uppercase tracking-wide text-[var(--color-slate)]">
+                Webhook
+              </span>
+              <div className="flex items-center gap-2">
+                <input
+                  type="url"
+                  placeholder="https://"
+                  value={webhookUrl}
+                  onChange={(e) => {
+                    setWebhookUrlState(e.target.value)
+                    setWebhookSaved(false)
+                  }}
+                  className="h-9 min-w-0 flex-1 rounded-[var(--radius-button)] border border-[var(--color-hairline-soft)] bg-[var(--color-card)] px-3 font-mono text-xs text-[var(--color-charcoal)] outline-none transition-colors focus:border-[var(--color-primary)] sm:w-48"
+                />
+                <Button
+                  variant="ghost"
+                  className="h-9 rounded-[var(--radius-button)] px-3 text-xs"
+                  onClick={saveWebhook}
+                >
+                  {webhookSaved ? "Saved" : "Hook"}
+                </Button>
+              </div>
+            </label>
+            <Button
+              variant="outline"
+              className="h-9 rounded-[var(--radius-button)] px-3 text-xs"
+              onClick={exportJson}
+            >
+              <Icon icon="solar:code-file-linear" className="h-4 w-4" />
               JSON
             </Button>
-            <Button className="h-10 rounded-lg px-4 text-sm" onClick={exportCsv}>
-              <Icon icon="solar:download-minimalistic-linear" className="h-5 w-5" />
+            <Button className="h-9 rounded-[var(--radius-button)] px-3 text-xs" onClick={exportCsv}>
+              <Icon icon="solar:download-minimalistic-linear" className="h-4 w-4" />
               CSV
             </Button>
           </div>
@@ -256,7 +296,7 @@ export function AdminDashboard({ formId }: AdminDashboardProps) {
             id="panel-cost"
             role="tabpanel"
             aria-labelledby="tab-cost"
-            className="rounded-lg border border-[var(--color-hairline-soft)] bg-[var(--color-card)] p-6 shadow-[var(--shadow-card)]"
+            className="border-t border-[var(--color-hairline-soft)] pt-6"
           >
             <CostPanel responseCount={records.length} />
           </div>
@@ -264,7 +304,12 @@ export function AdminDashboard({ formId }: AdminDashboardProps) {
 
         {/* Bounty tab */}
         {activeTab === "bounty" && (
-          <div id="panel-bounty" role="tabpanel" aria-labelledby="tab-bounty">
+          <div
+            id="panel-bounty"
+            role="tabpanel"
+            aria-labelledby="tab-bounty"
+            className="border-t border-[var(--color-hairline-soft)] pt-6"
+          >
             <BountyPanel
               formId={formId}
               records={records}
@@ -275,148 +320,253 @@ export function AdminDashboard({ formId }: AdminDashboardProps) {
 
         {/* Responses tab — metrics + list */}
         {activeTab === "responses" && (
-          <div id="panel-responses" role="tabpanel" aria-labelledby="tab-responses" className="flex flex-col gap-6">
-        <section className="grid gap-3 md:grid-cols-4">
-          <MetricCard label="Decrypted" value={records.length.toString()} icon="solar:lock-keyhole-unlocked-linear" />
-          <MetricCard label="Prioritized" value={filteredRecords.length.toString()} icon="solar:sort-by-time-linear" />
-          <MetricCard label="Open" value={metrics.openCount.toString()} icon="solar:inbox-line-linear" />
-          <MetricCard
-            label="Critical"
-            value={metrics.criticalCount.toString()}
-            icon="solar:danger-triangle-linear"
-          />
-        </section>
+          <div
+            id="panel-responses"
+            role="tabpanel"
+            aria-labelledby="tab-responses"
+            className="flex flex-col gap-8"
+          >
+            {/* Metrics strip */}
+            <section className="grid grid-cols-2 gap-px overflow-hidden rounded-[var(--radius-card)] border border-[var(--color-hairline-soft)] bg-[var(--color-hairline-soft)] md:grid-cols-4">
+              <MetricCard
+                label="Decrypted"
+                value={records.length.toString()}
+                icon="solar:lock-keyhole-unlocked-linear"
+              />
+              <MetricCard
+                label="Prioritized"
+                value={filteredRecords.length.toString()}
+                icon="solar:sort-by-time-linear"
+              />
+              <MetricCard
+                label="Open"
+                value={metrics.openCount.toString()}
+                icon="solar:inbox-line-linear"
+              />
+              <MetricCard
+                label="Critical"
+                value={metrics.criticalCount.toString()}
+                icon="solar:danger-triangle-linear"
+              />
+            </section>
 
-        <section className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_420px]">
-          <div className="rounded-lg border border-[var(--color-hairline-soft)] bg-[var(--color-card)] shadow-[var(--shadow-card)]">
-            <div className="flex flex-col gap-3 border-b border-[var(--color-hairline-soft)] p-4 lg:flex-row lg:items-center lg:justify-between">
-              <div>
-                <h2 className="text-lg font-semibold text-[var(--color-ink)]">Responses</h2>
-                <p className="mt-1 text-sm text-[var(--color-slate)]">
-                  Latest {formatDate(metrics.latestTimestamp)} from Sui refs and Walrus blobs
-                </p>
-              </div>
-              <div className="grid gap-2 sm:grid-cols-3">
-                <SelectFilter label="Severity" value={severity} onChange={(value) => setSeverity(value as Severity | "all")}>
-                  <option value="all">All severities</option>
-                  {SEVERITIES.map((item) => (
-                    <option key={item} value={item}>
-                      {titleCase(item)}
-                    </option>
-                  ))}
-                </SelectFilter>
-                <SelectFilter label="Status" value={status} onChange={(value) => setStatus(value as ResponseStatus | "all")}>
-                  <option value="all">All statuses</option>
-                  {RESPONSE_STATUSES.map((item) => (
-                    <option key={item} value={item}>
-                      {titleCase(item)}
-                    </option>
-                  ))}
-                </SelectFilter>
-                <SelectFilter label="Date" value={dateFilter} onChange={(value) => setDateFilter(value as DateFilter)}>
-                  <option value="all">Any date</option>
-                  <option value="24h">Last 24h</option>
-                  <option value="7d">Last 7d</option>
-                </SelectFilter>
-              </div>
-            </div>
-
-            {filteredRecords.length === 0 ? (
-              <div className="p-10 text-center">
-                <Icon icon="solar:filter-linear" className="mx-auto h-10 w-10 text-[var(--color-slate)]" />
-                <h3 className="mt-3 font-semibold text-[var(--color-ink)]">No matching responses</h3>
-                <p className="mt-2 text-sm text-[var(--color-slate)]">Adjust severity, status, or date filters.</p>
-              </div>
-            ) : (
-              <div className="divide-y divide-[var(--color-hairline-soft)]">
-                {filteredRecords.map((record) => (
-                  <button
-                    key={record.index}
-                    className={`grid w-full gap-3 p-4 text-left transition-colors hover:bg-teal-50/50 dark:hover:bg-teal-900/20 md:grid-cols-[84px_minmax(0,1fr)_140px_120px] ${
-                      selectedRecord?.index === record.index ? "bg-teal-50 dark:bg-teal-900/30" : ""
-                    }`}
-                    onClick={() => setSelectedIndex(record.index)}
-                  >
-                    <div className="font-mono text-sm text-[var(--color-slate)]">#{record.index}</div>
-                    <div className="min-w-0">
-                      <div className="truncate font-semibold text-[var(--color-charcoal)]">
-                        {summarizeAnswers(record.response.answers)}
-                      </div>
-                      <div className="mt-1 truncate font-mono text-xs text-[var(--color-slate)]">
-                        {record.ref.blob_id}
-                      </div>
-                    </div>
-                    <SeverityBadge severity={record.ref.severity} />
-                    <div className="flex flex-col gap-1 text-sm">
-                      <span className={`w-fit rounded-full px-2 py-1 text-xs font-semibold ${statusClasses[record.ref.status]}`}>
-                        {titleCase(record.ref.status)}
-                      </span>
-                      <span className="text-xs text-[var(--color-slate)]">{formatDate(record.ref.timestamp_ms)}</span>
-                    </div>
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-
-          <aside className="rounded-lg border border-[var(--color-hairline-soft)] bg-[var(--color-card)] p-5 shadow-[var(--shadow-card)]">
-            {selectedRecord ? (
-              <div className="flex flex-col gap-5">
-                <div className="flex items-start justify-between gap-4">
+            {/* Main content — list + detail */}
+            <section className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_420px]">
+              {/* Response list */}
+              <div className="rounded-[var(--radius-card)] border border-[var(--color-hairline-soft)] bg-[var(--color-card)]">
+                {/* Filters bar */}
+                <div className="flex flex-col gap-3 border-b border-[var(--color-hairline-soft)] p-5 lg:flex-row lg:items-center lg:justify-between">
                   <div>
-                    <p className="font-mono text-xs text-[var(--color-slate)]">Response #{selectedRecord.index}</p>
-                    <h2 className="mt-1 text-xl font-semibold text-[var(--color-ink)]">Decrypted detail</h2>
+                    <h2 className="text-base font-semibold text-[var(--color-ink)]">Responses</h2>
+                    <p className="mt-0.5 text-xs text-[var(--color-slate)]">
+                      Latest {formatDate(metrics.latestTimestamp)} from Sui refs and Walrus blobs
+                    </p>
                   </div>
-                  <SeverityBadge severity={selectedRecord.ref.severity} />
-                </div>
-
-                <dl className="grid gap-3 text-sm">
-                  <DetailRow label="Submitter" value={selectedRecord.ref.submitter ?? "Signed anonymous"} />
-                  <DetailRow label="Status" value={titleCase(selectedRecord.ref.status)} />
-                  <DetailRow label="Root hash" value={selectedRecord.ref.root_hash} mono />
-                </dl>
-
-                <div>
-                  <h3 className="text-sm font-semibold text-[var(--color-ink)]">Answers</h3>
-                  <div className="mt-3 divide-y divide-[var(--color-hairline-soft)] rounded-lg border border-[var(--color-hairline-soft)]">
-                    {answerEntries.map(([key, value]) => (
-                      <div key={key} className="p-3">
-                        <div className="text-xs font-semibold uppercase text-[var(--color-slate)]">{key}</div>
-                        <div className="mt-1 break-words text-sm text-[var(--color-charcoal)]">{formatAnswer(value)}</div>
-                      </div>
-                    ))}
+                  <div className="flex flex-wrap gap-2 sm:gap-3">
+                    <SelectFilter
+                      label="Severity"
+                      value={severity}
+                      onChange={(value) => setSeverity(value as Severity | "all")}
+                    >
+                      <option value="all">All severities</option>
+                      {SEVERITIES.map((item) => (
+                        <option key={item} value={item}>
+                          {titleCase(item)}
+                        </option>
+                      ))}
+                    </SelectFilter>
+                    <SelectFilter
+                      label="Status"
+                      value={status}
+                      onChange={(value) => setStatus(value as ResponseStatus | "all")}
+                    >
+                      <option value="all">All statuses</option>
+                      {RESPONSE_STATUSES.map((item) => (
+                        <option key={item} value={item}>
+                          {titleCase(item)}
+                        </option>
+                      ))}
+                    </SelectFilter>
+                    <SelectFilter
+                      label="Date"
+                      value={dateFilter}
+                      onChange={(value) => setDateFilter(value as DateFilter)}
+                    >
+                      <option value="all">Any date</option>
+                      <option value="24h">Last 24h</option>
+                      <option value="7d">Last 7d</option>
+                    </SelectFilter>
                   </div>
                 </div>
 
-                <label className="grid gap-2">
-                  <span className="text-sm font-semibold text-[var(--color-ink)]">Internal note</span>
-                  <textarea
-                    value={noteDraft}
-                    onChange={(event) => {
-                      setNoteState("idle")
-                      setNoteDrafts((current) => ({
-                        ...current,
-                        [selectedRecord.index]: event.target.value,
-                      }))
-                    }}
-                    className="min-h-36 resize-y rounded-lg border border-[var(--color-hairline-soft)] bg-[var(--color-card)] p-3 text-sm text-[var(--color-charcoal)] outline-none focus:border-[var(--color-primary)]"
-                  />
-                </label>
-                <div className="flex items-center justify-between gap-3">
-                  <p className="text-xs text-[var(--color-slate)]">
-                    Notes encrypt under the owner key and persist as Walrus blob refs.
-                  </p>
-                  <Button className="h-10 rounded-lg px-4 text-sm" onClick={saveNote} disabled={noteState === "saving"}>
-                    <Icon icon="solar:diskette-linear" className="h-5 w-5" />
-                    {noteState === "saving" ? "Saving" : "Save"}
-                  </Button>
-                </div>
-                {noteState === "saved" ? <p className="text-sm text-[var(--color-success)]">Note blob ref updated.</p> : null}
-                {noteState === "error" ? <p className="text-sm text-[var(--color-error)]">Note upload failed.</p> : null}
+                {/* List or empty state */}
+                {filteredRecords.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center p-12 text-center">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[var(--color-canvas)]">
+                      <Icon
+                        icon="solar:filter-linear"
+                        className="h-5 w-5 text-[var(--color-slate)]"
+                      />
+                    </div>
+                    <h3 className="mt-4 text-sm font-semibold text-[var(--color-ink)]">
+                      No matching responses
+                    </h3>
+                    <p className="mt-1 max-w-xs text-xs leading-relaxed text-[var(--color-slate)]">
+                      No responses match the current severity, status, and date filters. Try
+                      broadening your criteria.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="divide-y divide-[var(--color-hairline-soft)]">
+                    {filteredRecords.map((record) => {
+                      const isActive = selectedRecord?.index === record.index
+                      return (
+                        <button
+                          key={record.index}
+                          className={`group grid w-full gap-3 px-5 py-3.5 text-left transition-colors ${
+                            isActive
+                              ? "bg-[var(--color-tint-mint)]"
+                              : "hover:bg-[var(--color-canvas)]"
+                          } md:grid-cols-[56px_minmax(0,1fr)_96px_120px]`}
+                          onClick={() => setSelectedIndex(record.index)}
+                        >
+                          <span className="font-mono text-xs tabular-nums text-[var(--color-slate)]">
+                            #{record.index}
+                          </span>
+                          <div className="min-w-0">
+                            <div className="truncate text-sm font-medium text-[var(--color-charcoal)]">
+                              {summarizeAnswers(record.response.answers)}
+                            </div>
+                            <div className="mt-0.5 truncate font-mono text-[11px] text-[var(--color-stone)]">
+                              {record.ref.blob_id}
+                            </div>
+                          </div>
+                          <SeverityBadge severity={record.ref.severity} />
+                          <div className="flex flex-col items-start gap-0.5">
+                            <span
+                              className={`rounded px-1.5 py-0.5 text-[11px] font-semibold ${statusClasses[record.ref.status]}`}
+                            >
+                              {titleCase(record.ref.status)}
+                            </span>
+                            <span className="font-mono text-[11px] tabular-nums text-[var(--color-stone)]">
+                              {formatDate(record.ref.timestamp_ms)}
+                            </span>
+                          </div>
+                        </button>
+                      )
+                    })}
+                  </div>
+                )}
               </div>
-            ) : null}
-          </aside>
-        </section>
+
+              {/* Detail panel */}
+              <aside className="rounded-[var(--radius-card)] border border-[var(--color-hairline-soft)] bg-[var(--color-card)]">
+                {selectedRecord ? (
+                  <div className="flex flex-col">
+                    {/* Detail header */}
+                    <div className="flex items-start justify-between gap-4 border-b border-[var(--color-hairline-soft)] p-5">
+                      <div>
+                        <p className="font-mono text-[11px] tabular-nums text-[var(--color-slate)]">
+                          Response #{selectedRecord.index}
+                        </p>
+                        <h2 className="mt-1 text-lg font-semibold text-[var(--color-ink)]">
+                          Decrypted detail
+                        </h2>
+                      </div>
+                      <SeverityBadge severity={selectedRecord.ref.severity} />
+                    </div>
+
+                    {/* Meta rows */}
+                    <dl className="divide-y divide-[var(--color-hairline-soft)]">
+                      <DetailRow
+                        label="Submitter"
+                        value={selectedRecord.ref.submitter ?? "Signed anonymous"}
+                      />
+                      <DetailRow label="Status" value={titleCase(selectedRecord.ref.status)} />
+                      <DetailRow label="Root hash" value={selectedRecord.ref.root_hash} mono />
+                    </dl>
+
+                    {/* Answers */}
+                    <div className="border-t border-[var(--color-hairline-soft)]">
+                      <h3 className="px-5 pt-4 pb-2 text-[11px] font-semibold uppercase tracking-wide text-[var(--color-slate)]">
+                        Answers
+                      </h3>
+                      <div className="divide-y divide-[var(--color-hairline-soft)]">
+                        {answerEntries.map(([key, value]) => (
+                          <div key={key} className="px-5 py-3">
+                            <div className="text-[11px] font-semibold uppercase tracking-wide text-[var(--color-slate)]">
+                              {key}
+                            </div>
+                            <div className="mt-1 break-words text-sm text-[var(--color-charcoal)]">
+                              {formatAnswer(value)}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Note */}
+                    <div className="border-t border-[var(--color-hairline-soft)] p-5">
+                      <label className="grid gap-2">
+                        <span className="text-[11px] font-semibold uppercase tracking-wide text-[var(--color-slate)]">
+                          Internal note
+                        </span>
+                        <textarea
+                          value={noteDraft}
+                          onChange={(event) => {
+                            setNoteState("idle")
+                            setNoteDrafts((current) => ({
+                              ...current,
+                              [selectedRecord.index]: event.target.value,
+                            }))
+                          }}
+                          className="min-h-28 resize-y rounded-[var(--radius-button)] border border-[var(--color-hairline-soft)] bg-[var(--color-canvas)] p-3 text-sm text-[var(--color-charcoal)] outline-none transition-colors focus:border-[var(--color-primary)]"
+                        />
+                      </label>
+                      <div className="mt-3 flex items-center justify-between gap-3">
+                        <p className="text-[11px] leading-relaxed text-[var(--color-stone)]">
+                          Notes encrypt under the owner key and persist as Walrus blob refs.
+                        </p>
+                        <Button
+                          className="h-8 rounded-[var(--radius-button)] px-3 text-xs"
+                          onClick={saveNote}
+                          disabled={noteState === "saving"}
+                        >
+                          <Icon icon="solar:diskette-linear" className="h-4 w-4" />
+                          {noteState === "saving" ? "Saving" : "Save"}
+                        </Button>
+                      </div>
+                      {noteState === "saved" ? (
+                        <p className="mt-2 text-xs font-medium text-[var(--color-success)]">
+                          Note blob ref updated.
+                        </p>
+                      ) : null}
+                      {noteState === "error" ? (
+                        <p className="mt-2 text-xs font-medium text-[var(--color-error)]">
+                          Note upload failed.
+                        </p>
+                      ) : null}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center justify-center p-12 text-center">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[var(--color-canvas)]">
+                      <Icon
+                        icon="solar:cursor-linear"
+                        className="h-5 w-5 text-[var(--color-slate)]"
+                      />
+                    </div>
+                    <h3 className="mt-4 text-sm font-semibold text-[var(--color-ink)]">
+                      Select a response
+                    </h3>
+                    <p className="mt-1 max-w-xs text-xs leading-relaxed text-[var(--color-slate)]">
+                      Choose a response from the list to view its decrypted answers and add internal
+                      notes.
+                    </p>
+                  </div>
+                )}
+              </aside>
+            </section>
           </div>
         )}
       </div>
@@ -446,10 +596,10 @@ function TabButton({
       aria-selected={active}
       aria-controls={controls}
       onClick={onClick}
-      className={`flex items-center gap-2 border-b-2 px-4 py-2.5 text-sm font-semibold transition-colors ${
+      className={`relative flex items-center gap-1.5 px-3 py-2.5 text-sm font-medium transition-colors after:absolute after:inset-x-0 after:bottom-0 after:h-0.5 after:transition-colors ${
         active
-          ? "border-[var(--color-primary)] text-[var(--color-primary)]"
-          : "border-transparent text-[var(--color-slate)] hover:text-[var(--color-ink)]"
+          ? "text-[var(--color-primary)] after:bg-[var(--color-primary)]"
+          : "text-[var(--color-slate)] hover:text-[var(--color-charcoal)] after:bg-transparent"
       }`}
     >
       <Icon icon={icon} className="h-4 w-4" />
@@ -458,22 +608,111 @@ function TabButton({
   )
 }
 
+function FormIdPill({ formId }: { formId: string }) {
+  const [copied, setCopied] = useState(false)
+
+  function handleCopy() {
+    void navigator.clipboard.writeText(formId).then(() => {
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    })
+  }
+
+  return (
+    <span
+      title={formId}
+      className="inline-flex items-center gap-1.5 rounded-[var(--radius-pill)] border border-[var(--color-hairline-soft)] bg-[var(--color-card)] px-3 py-1"
+    >
+      <span className="font-mono text-xs text-[var(--color-slate)]">{formatFormId(formId)}</span>
+      <button
+        type="button"
+        aria-label="Copy form ID"
+        onClick={handleCopy}
+        className="flex items-center text-[var(--color-stone)] transition-colors hover:text-[var(--color-charcoal)]"
+      >
+        {copied ? (
+          <span className="t-text-swap font-mono text-[10px] text-[var(--color-success)]">
+            Copied
+          </span>
+        ) : (
+          <Icon icon="solar:copy-linear" className="h-3 w-3" />
+        )}
+      </button>
+    </span>
+  )
+}
+
 function AdminDashboardShell({ formId, state }: { formId: string; state: "loading" | "error" }) {
   return (
     <main className="min-h-[100dvh] bg-[var(--color-canvas)] px-4 py-6 text-[var(--color-charcoal)] sm:px-6 lg:px-8">
       <div className="mx-auto max-w-7xl">
-        <p className="font-mono text-xs uppercase tracking-[0.16em] text-[var(--color-slate)]">{formId}</p>
-        <h1 className="mt-3 text-3xl font-bold text-[var(--color-ink)] md:text-5xl">Response triage</h1>
+        <div className="flex items-center gap-2">
+          <Icon icon="solar:shield-keyhole-linear" className="h-4 w-4 text-[var(--color-slate)]" />
+          <FormIdPill formId={formId} />
+        </div>
+        <h1 className="mt-2 text-3xl font-bold text-[var(--color-ink)] md:text-5xl">
+          Response triage
+        </h1>
+
         {state === "loading" ? (
-          <div className="mt-8 grid gap-4 lg:grid-cols-[minmax(0,1fr)_420px]">
-            <div className="h-96 animate-pulse rounded-lg bg-[var(--color-card)]" />
-            <div className="h-96 animate-pulse rounded-lg bg-[var(--color-card)]" />
+          <div className="mt-8 space-y-6">
+            {/* Metric skeletons */}
+            <div className="grid grid-cols-2 gap-px overflow-hidden rounded-[var(--radius-card)] border border-[var(--color-hairline-soft)] md:grid-cols-4">
+              {[1, 2, 3, 4].map((i) => (
+                <div key={i} className="bg-[var(--color-card)] p-5">
+                  <div className="h-3 w-16 animate-pulse rounded bg-[var(--color-canvas)]" />
+                  <div className="mt-3 h-8 w-12 animate-pulse rounded bg-[var(--color-canvas)]" />
+                </div>
+              ))}
+            </div>
+            {/* List + detail skeletons */}
+            <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_420px]">
+              <div className="rounded-[var(--radius-card)] border border-[var(--color-hairline-soft)] bg-[var(--color-card)]">
+                <div className="border-b border-[var(--color-hairline-soft)] p-5">
+                  <div className="h-4 w-24 animate-pulse rounded bg-[var(--color-canvas)]" />
+                  <div className="mt-2 h-3 w-48 animate-pulse rounded bg-[var(--color-canvas)]" />
+                </div>
+                {[1, 2, 3, 4, 5].map((i) => (
+                  <div
+                    key={i}
+                    className="flex items-center gap-3 border-b border-[var(--color-hairline-soft)] p-4 last:border-0"
+                  >
+                    <div className="h-4 w-10 animate-pulse rounded bg-[var(--color-canvas)]" />
+                    <div className="flex-1 space-y-2">
+                      <div className="h-3 w-3/4 animate-pulse rounded bg-[var(--color-canvas)]" />
+                      <div className="h-2.5 w-1/2 animate-pulse rounded bg-[var(--color-canvas)]" />
+                    </div>
+                    <div className="h-5 w-14 animate-pulse rounded bg-[var(--color-canvas)]" />
+                    <div className="h-5 w-16 animate-pulse rounded bg-[var(--color-canvas)]" />
+                  </div>
+                ))}
+              </div>
+              <div className="rounded-[var(--radius-card)] border border-[var(--color-hairline-soft)] bg-[var(--color-card)] p-5">
+                <div className="h-4 w-20 animate-pulse rounded bg-[var(--color-canvas)]" />
+                <div className="mt-2 h-5 w-32 animate-pulse rounded bg-[var(--color-canvas)]" />
+                <div className="mt-6 space-y-4">
+                  {[1, 2, 3].map((i) => (
+                    <div key={i} className="space-y-1.5">
+                      <div className="h-2.5 w-16 animate-pulse rounded bg-[var(--color-canvas)]" />
+                      <div className="h-4 w-full animate-pulse rounded bg-[var(--color-canvas)]" />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
           </div>
         ) : (
-          <div className="mt-8 rounded-lg border border-[var(--color-hairline-soft)] bg-[var(--color-card)] p-8">
-            <Icon icon="solar:danger-circle-linear" className="h-10 w-10 text-[var(--color-error)]" />
-            <h2 className="mt-3 text-lg font-semibold text-[var(--color-ink)]">Unable to decrypt responses</h2>
-            <p className="mt-2 text-sm text-[var(--color-slate)]">
+          <div className="mt-8 flex flex-col items-center justify-center rounded-[var(--radius-card)] border border-[var(--color-hairline-soft)] bg-[var(--color-card)] p-16 text-center">
+            <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[var(--color-error)]/8">
+              <Icon
+                icon="solar:danger-circle-linear"
+                className="h-6 w-6 text-[var(--color-error)]"
+              />
+            </div>
+            <h2 className="mt-5 text-lg font-semibold text-[var(--color-ink)]">
+              Unable to decrypt responses
+            </h2>
+            <p className="mt-2 max-w-sm text-sm leading-relaxed text-[var(--color-slate)]">
               Check the owner wallet, Seal policy, and Walrus read client configuration.
             </p>
           </div>
@@ -485,12 +724,16 @@ function AdminDashboardShell({ formId, state }: { formId: string; state: "loadin
 
 function MetricCard({ label, value, icon }: { label: string; value: string; icon: string }) {
   return (
-    <div className="rounded-lg border border-[var(--color-hairline-soft)] bg-[var(--color-card)] p-4 shadow-[var(--shadow-card)]">
-      <div className="flex items-center justify-between gap-3">
-        <span className="text-sm font-medium text-[var(--color-slate)]">{label}</span>
-        <Icon icon={icon} className="h-5 w-5 text-[var(--color-primary)]" />
+    <div className="bg-[var(--color-card)] p-5">
+      <div className="flex items-center gap-2">
+        <Icon icon={icon} className="h-3.5 w-3.5 text-[var(--color-slate)]" />
+        <span className="text-[11px] font-semibold uppercase tracking-wide text-[var(--color-slate)]">
+          {label}
+        </span>
       </div>
-      <div className="mt-3 font-mono text-3xl font-semibold text-[var(--color-ink)]">{value}</div>
+      <div className="mt-2 font-mono text-2xl font-semibold tabular-nums text-[var(--color-ink)]">
+        {value}
+      </div>
     </div>
   )
 }
@@ -508,11 +751,13 @@ function SelectFilter({
 }) {
   return (
     <label className="grid gap-1">
-      <span className="text-xs font-semibold text-[var(--color-slate)]">{label}</span>
+      <span className="text-[11px] font-semibold uppercase tracking-wide text-[var(--color-slate)]">
+        {label}
+      </span>
       <select
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        className="h-10 rounded-lg border border-[var(--color-hairline-soft)] bg-[var(--color-card)] px-3 text-sm text-[var(--color-charcoal)] outline-none focus:border-[var(--color-primary)]"
+        className="h-8 rounded-[var(--radius-button)] border border-[var(--color-hairline-soft)] bg-[var(--color-card)] px-2.5 text-xs text-[var(--color-charcoal)] outline-none transition-colors hover:border-[var(--color-slate)] focus:border-[var(--color-primary)]"
       >
         {children}
       </select>
@@ -522,17 +767,33 @@ function SelectFilter({
 
 function SeverityBadge({ severity }: { severity: Severity }) {
   return (
-    <span className={`w-fit rounded-full border px-2.5 py-1 text-xs font-semibold ${severityClasses[severity]}`}>
+    <span
+      className={`w-fit rounded border px-1.5 py-0.5 text-[11px] font-semibold ${severityClasses[severity]}`}
+    >
       {titleCase(severity)}
     </span>
   )
 }
 
-function DetailRow({ label, value, mono = false }: { label: string; value: string; mono?: boolean }) {
+function DetailRow({
+  label,
+  value,
+  mono = false,
+}: {
+  label: string
+  value: string
+  mono?: boolean
+}) {
   return (
-    <div className="grid gap-1">
-      <dt className="text-xs font-semibold uppercase text-[var(--color-slate)]">{label}</dt>
-      <dd className={`break-words text-[var(--color-charcoal)] ${mono ? "font-mono text-xs" : ""}`}>{value}</dd>
+    <div className="flex items-baseline justify-between gap-4 px-5 py-3">
+      <dt className="shrink-0 text-[11px] font-semibold uppercase tracking-wide text-[var(--color-slate)]">
+        {label}
+      </dt>
+      <dd
+        className={`min-w-0 break-words text-right text-sm text-[var(--color-charcoal)] ${mono ? "font-mono text-xs tabular-nums" : ""}`}
+      >
+        {value}
+      </dd>
     </div>
   )
 }

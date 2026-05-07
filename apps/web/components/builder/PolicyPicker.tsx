@@ -94,7 +94,7 @@ export function PolicyPicker({ value, onChange }: PolicyPickerProps) {
               Required Move type
             </span>
             <input
-              className="h-10 rounded-[var(--radius-button)] border border-[var(--color-hairline-soft)] bg-white px-3 font-mono text-xs outline-none focus:border-sky-500 dark:bg-white/5"
+              className="h-10 rounded-[var(--radius-button)] border border-[var(--color-hairline-soft)] bg-[var(--color-card)] px-3 font-mono text-xs text-[var(--color-charcoal)] outline-none placeholder-[var(--color-stone)] focus:border-[var(--color-primary)]"
               placeholder="0x2::coin::Coin<0x2::sui::SUI>"
               value={config.required_type ?? ""}
               onChange={(e) => setConfig("required_type", e.target.value)}
@@ -107,11 +107,9 @@ export function PolicyPicker({ value, onChange }: PolicyPickerProps) {
 
         {value.type === "allowlist" && (
           <label className="grid gap-2">
-            <span className="text-xs font-semibold text-[var(--color-ink)]">
-              Allowed addresses
-            </span>
+            <span className="text-xs font-semibold text-[var(--color-ink)]">Allowed addresses</span>
             <textarea
-              className="min-h-24 rounded-[var(--radius-button)] border border-[var(--color-hairline-soft)] bg-white px-3 py-2 font-mono text-xs leading-6 outline-none focus:border-sky-500 dark:bg-white/5"
+              className="min-h-24 rounded-[var(--radius-button)] border border-[var(--color-hairline-soft)] bg-[var(--color-card)] px-3 py-2 font-mono text-xs leading-6 text-[var(--color-charcoal)] outline-none placeholder-[var(--color-stone)] focus:border-[var(--color-primary)]"
               placeholder={"0xabc…, 0xdef…"}
               value={config.addresses ?? ""}
               onChange={(e) => setConfig("addresses", e.target.value)}
@@ -125,11 +123,13 @@ export function PolicyPicker({ value, onChange }: PolicyPickerProps) {
         {value.type === "time_locked" && (
           <div className="grid gap-3 sm:grid-cols-2">
             <label className="grid gap-2">
-              <span className="text-xs font-semibold text-[var(--color-ink)]">Open after epoch</span>
+              <span className="text-xs font-semibold text-[var(--color-ink)]">
+                Open after epoch
+              </span>
               <input
                 type="number"
                 min={0}
-                className="h-10 rounded-[var(--radius-button)] border border-[var(--color-hairline-soft)] bg-white px-3 text-sm outline-none focus:border-sky-500 dark:bg-white/5"
+                className="h-10 rounded-[var(--radius-button)] border border-[var(--color-hairline-soft)] bg-[var(--color-card)] px-3 text-sm text-[var(--color-charcoal)] outline-none placeholder-[var(--color-stone)] focus:border-[var(--color-primary)]"
                 placeholder="e.g. 500"
                 value={config.open_after_epoch ?? ""}
                 onChange={(e) => setConfig("open_after_epoch", e.target.value)}
@@ -142,7 +142,7 @@ export function PolicyPicker({ value, onChange }: PolicyPickerProps) {
               <input
                 type="number"
                 min={0}
-                className="h-10 rounded-[var(--radius-button)] border border-[var(--color-hairline-soft)] bg-white px-3 text-sm outline-none focus:border-sky-500 dark:bg-white/5"
+                className="h-10 rounded-[var(--radius-button)] border border-[var(--color-hairline-soft)] bg-[var(--color-card)] px-3 text-sm text-[var(--color-charcoal)] outline-none placeholder-[var(--color-stone)] focus:border-[var(--color-primary)]"
                 placeholder="e.g. 1000"
                 value={config.close_before_epoch ?? ""}
                 onChange={(e) => setConfig("close_before_epoch", e.target.value)}

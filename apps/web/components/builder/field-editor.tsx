@@ -22,7 +22,7 @@ export function FieldEditor({ field, onUpdateField, onRemoveField }: FieldEditor
         </div>
         <button
           aria-label="Remove field"
-          className="flex size-10 items-center justify-center rounded-[var(--radius-button)] border border-[var(--color-hairline-soft)] text-[var(--color-error)] hover:bg-red-50"
+          className="flex size-10 items-center justify-center rounded-[var(--radius-button)] border border-[var(--color-hairline-soft)] text-[var(--color-error)] hover:bg-[var(--color-error)]/10"
           onClick={() => onRemoveField(field.id)}
           type="button"
         >
@@ -34,7 +34,7 @@ export function FieldEditor({ field, onUpdateField, onRemoveField }: FieldEditor
         <label className="grid gap-2">
           <span className="text-sm font-semibold text-[var(--color-ink)]">Label</span>
           <input
-            className="h-11 rounded-[var(--radius-button)] border border-[var(--color-hairline-soft)] bg-white px-3 text-sm text-[var(--color-charcoal)] outline-none focus:border-[var(--color-primary)] dark:bg-white/5"
+            className="h-11 rounded-[var(--radius-button)] border border-[var(--color-hairline-soft)] bg-[var(--color-card)] px-3 text-sm text-[var(--color-charcoal)] outline-none placeholder-[var(--color-stone)] focus:border-[var(--color-primary)]"
             onChange={(event) => onUpdateField({ ...field, label: event.target.value })}
             value={field.label}
           />
@@ -55,11 +55,11 @@ export function FieldEditor({ field, onUpdateField, onRemoveField }: FieldEditor
           />
         </label>
 
-        {(field.type === "dropdown" || field.type === "checkbox_group") ? (
+        {field.type === "dropdown" || field.type === "checkbox_group" ? (
           <label className="grid gap-2">
             <span className="text-sm font-semibold text-[var(--color-ink)]">Options</span>
             <textarea
-              className="min-h-28 rounded-[var(--radius-button)] border border-[var(--color-hairline-soft)] bg-white px-3 py-2 text-sm leading-6 text-[var(--color-charcoal)] outline-none focus:border-[var(--color-primary)] dark:bg-white/5"
+              className="min-h-28 rounded-[var(--radius-button)] border border-[var(--color-hairline-soft)] bg-[var(--color-card)] px-3 py-2 text-sm leading-6 text-[var(--color-charcoal)] outline-none placeholder-[var(--color-stone)] focus:border-[var(--color-primary)]"
               onChange={(event) =>
                 onUpdateField({
                   ...field,
@@ -76,7 +76,7 @@ export function FieldEditor({ field, onUpdateField, onRemoveField }: FieldEditor
           <label className="grid gap-2">
             <span className="text-sm font-semibold text-[var(--color-ink)]">Maximum rating</span>
             <input
-              className="h-11 rounded-[var(--radius-button)] border border-[var(--color-hairline-soft)] bg-white px-3 text-sm text-[var(--color-charcoal)] outline-none focus:border-[var(--color-primary)] dark:bg-white/5"
+              className="h-11 rounded-[var(--radius-button)] border border-[var(--color-hairline-soft)] bg-[var(--color-card)] px-3 text-sm text-[var(--color-charcoal)] outline-none focus:border-[var(--color-primary)]"
               max={10}
               min={1}
               onChange={(event) => onUpdateField({ ...field, max: Number(event.target.value) })}

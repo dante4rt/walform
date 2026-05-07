@@ -28,7 +28,7 @@ export function FieldList({
           <p className="text-xs font-semibold uppercase text-[var(--color-primary)]">Canvas</p>
           <h2 className="mt-1 text-lg font-bold text-[var(--color-ink)]">Drag to reorder</h2>
         </div>
-        <span className="rounded-[var(--radius-pill)] bg-[var(--color-tint-cream)] px-3 py-1 text-xs font-semibold text-[#92400E]">
+        <span className="rounded-[var(--radius-pill)] bg-[var(--color-tint-cream)] px-3 py-1 text-xs font-semibold text-[var(--color-accent-deep)]">
           {fields.length} fields
         </span>
       </div>
@@ -42,7 +42,7 @@ export function FieldList({
               className={`grid grid-cols-[32px_1fr_auto] items-center gap-3 rounded-[var(--radius-button)] border p-3 text-left transition ${
                 isSelected
                   ? "border-[var(--color-primary)] bg-[var(--color-canvas)]"
-                  : "border-[var(--color-hairline-soft)] bg-white hover:border-[var(--color-hairline)] dark:bg-white/5"
+                  : "border-[var(--color-hairline-soft)] bg-[var(--color-card)] hover:border-[var(--color-hairline)]"
               } ${isDragging ? "opacity-50" : ""}`}
               draggable
               key={field.id}
@@ -63,7 +63,11 @@ export function FieldList({
                   {field.type.replaceAll("_", " ")} · {field.required ? "Required" : "Optional"}
                 </span>
               </span>
-              <Icon aria-hidden className="text-[var(--color-stone)]" icon="solar:hamburger-menu-linear" />
+              <Icon
+                aria-hidden
+                className="text-[var(--color-stone)]"
+                icon="solar:hamburger-menu-linear"
+              />
             </button>
           )
         })}

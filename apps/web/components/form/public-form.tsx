@@ -35,6 +35,47 @@ type AnswerValue = string | string[] | number | boolean | null
 type OptionField = Extract<FormField, { type: "dropdown" | "checkbox_group" }>
 type StarRatingField = Extract<FormField, { type: "star_rating" }>
 
+// ── Helpers ──────────────────────────────────────────────────────────────────
+
+function truncateId(id: string): string {
+  if (id.length <= 12) return id
+  return `${id.slice(0, 8)}...${id.slice(-4)}`
+}
+
+function FormIdChip({ formId }: { formId: string }) {
+  const [copied, setCopied] = useState(false)
+
+  function handleCopy() {
+    void navigator.clipboard.writeText(formId).then(() => {
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    })
+  }
+
+  return (
+    <span className="inline-flex items-center gap-1.5">
+      <span
+        className="inline-flex items-center gap-1 rounded-[var(--radius-pill)] border border-[var(--color-hairline-soft)] bg-[var(--color-tint-mint)] px-3 py-1 font-mono text-xs text-[var(--color-primary-deep)]"
+        title={formId}
+      >
+        {truncateId(formId)}
+      </span>
+      <button
+        aria-label="Copy form ID"
+        className="flex size-6 items-center justify-center rounded-[var(--radius-button)] text-[var(--color-slate)] transition-colors hover:bg-[var(--color-tint-mint)] hover:text-[var(--color-primary)]"
+        onClick={handleCopy}
+        type="button"
+      >
+        {copied ? (
+          <Icon aria-hidden icon="solar:check-circle-linear" className="size-3.5 text-[var(--color-success)]" />
+        ) : (
+          <Icon aria-hidden icon="solar:copy-linear" className="size-3.5" />
+        )}
+      </button>
+    </span>
+  )
+}
+
 const severityOptions: Array<{ value: Severity; label: string }> = [
   { value: "none", label: "None" },
   { value: "low", label: "Low" },
@@ -171,23 +212,43 @@ export function PublicForm({ formId, schema }: PublicFormProps) {
 
   return (
     <main className="min-h-[100dvh] bg-[var(--color-canvas)] px-5 py-8 text-[var(--color-charcoal)] md:px-8">
-      <div className="mx-auto grid max-w-7xl gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
+      {/* Mobile FLOW strip — visible only below lg */}
+      <div className="mx-auto mb-4 max-w-7xl lg:hidden">
+        <div className="flex items-center justify-between rounded-[var(--radius-card)] border border-[var(--color-hairline-soft)] bg-[var(--color-card)] px-4 py-3 shadow-[var(--shadow-card)]">
+          {(["Seal encrypt", "Walrus writeBlob", "Sui submit", "Receipt"] as const).map(
+            (label, index) => (
+              <div className="flex flex-col items-center gap-1" key={label}>
+                <span className="flex size-7 items-center justify-center rounded-full bg-[var(--color-tint-sky)] font-mono text-xs font-bold text-[var(--color-primary-deep)]">
+                  {index + 1}
+                </span>
+                <span className="text-center text-[10px] font-medium leading-tight text-[var(--color-slate)]">
+                  {label}
+                </span>
+              </div>
+            ),
+          )}
+        </div>
+      </div>
+
+      <div className="mx-auto grid max-w-7xl gap-6 lg:grid-cols-[minmax(0,1fr)_320px] lg:gap-12">
         <section className="rounded-[var(--radius-card)] border border-[var(--color-hairline-soft)] bg-[var(--color-card)] p-5 shadow-[var(--shadow-card)] md:p-7">
-          <div className="flex flex-col gap-4 border-b border-[var(--color-hairline-soft)] pb-6 md:flex-row md:items-start md:justify-between">
-            <div>
-              <p className="font-mono text-xs font-semibold uppercase text-[var(--color-primary)]">
-                /f/{formId}
-              </p>
-              <h1 className="mt-2 text-4xl font-bold leading-tight text-[var(--color-ink)]">
+          <div className="border-b border-[var(--color-hairline-soft)] pb-6">
+            <div className="flex flex-wrap items-center gap-2">
+              <h1 className="text-3xl font-bold leading-tight text-[var(--color-ink)] sm:text-4xl">
                 {schema.title}
               </h1>
+              <span className="rounded-[var(--radius-pill)] bg-[var(--color-tint-mint)] px-3 py-1 text-xs font-semibold text-[var(--color-primary-deep)]">
+                {requiredCount} required
+              </span>
+            </div>
+            <div className="mt-2 flex items-center gap-1">
+              <FormIdChip formId={formId} />
+            </div>
+            {schema.description ? (
               <p className="mt-3 max-w-2xl text-sm leading-6 text-[var(--color-slate)]">
                 {schema.description}
               </p>
-            </div>
-            <span className="w-fit rounded-[var(--radius-pill)] bg-[var(--color-tint-mint)] px-3 py-1 text-xs font-semibold text-[var(--color-primary-deep)]">
-              {requiredCount} required
-            </span>
+            ) : null}
           </div>
 
           <div className="mt-6 grid gap-5">
@@ -280,7 +341,7 @@ export function PublicForm({ formId, schema }: PublicFormProps) {
           </div>
         </section>
 
-        <aside className="grid content-start gap-4">
+        <aside className="hidden content-start gap-4 lg:grid">
           <section className="rounded-[var(--radius-card)] border border-[var(--color-hairline-soft)] bg-[var(--color-card)] p-5 shadow-[var(--shadow-card)]">
             <p className="text-xs font-semibold uppercase text-[var(--color-primary)]">Flow</p>
             <div className="mt-4 grid gap-3">

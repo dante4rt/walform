@@ -19,7 +19,7 @@ export function FieldPalette({ onAddField }: FieldPaletteProps) {
       <div className="grid gap-2">
         {FIELD_BLUEPRINTS.map((field) => (
           <button
-            className="group grid grid-cols-[40px_1fr] gap-3 rounded-[var(--radius-button)] border border-[var(--color-hairline-soft)] bg-white p-3 text-left transition hover:border-[var(--color-hairline)] hover:bg-[var(--color-canvas)] dark:bg-white/5"
+            className="group grid grid-cols-[40px_1fr] gap-3 rounded-[var(--radius-button)] border border-[var(--color-hairline-soft)] bg-[var(--color-card)] p-3 text-left transition hover:border-[var(--color-hairline)] hover:bg-[var(--color-canvas)]"
             key={field.type}
             onClick={() => onAddField(field.type)}
             type="button"
@@ -28,8 +28,12 @@ export function FieldPalette({ onAddField }: FieldPaletteProps) {
               <Icon aria-hidden icon={iconForType(field.type)} />
             </span>
             <span>
-              <span className="block text-sm font-semibold text-[var(--color-ink)]">{field.label}</span>
-              <span className="mt-1 block text-xs leading-5 text-[var(--color-slate)]">{field.help}</span>
+              <span className="block text-sm font-semibold text-[var(--color-ink)]">
+                {field.label}
+              </span>
+              <span className="mt-1 block text-xs leading-5 text-[var(--color-slate)]">
+                {field.help}
+              </span>
             </span>
           </button>
         ))}

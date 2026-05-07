@@ -66,11 +66,11 @@ function isAnonMode(records: AdminResponseRecord[]): boolean {
 }
 
 const SEVERITY_COLORS: Record<Severity, string> = {
-  none: "text-zinc-400",
-  low: "text-emerald-400",
-  medium: "text-amber-400",
-  high: "text-orange-400",
-  critical: "text-red-400",
+  none: "text-[var(--color-stone)]",
+  low: "text-[var(--color-success)]",
+  medium: "text-[var(--color-warning)]",
+  high: "text-[var(--color-warning)]",
+  critical: "text-[var(--color-error)]",
 }
 
 // ---------------------------------------------------------------------------
@@ -79,7 +79,7 @@ const SEVERITY_COLORS: Record<Severity, string> = {
 
 function SectionCard({ children, className = "" }: { children: React.ReactNode; className?: string }) {
   return (
-    <div className={`rounded-xl border border-zinc-800 bg-zinc-900 p-4 ${className}`}>
+    <div className={`rounded-[var(--radius-card)] border border-[var(--color-hairline-soft)] bg-[var(--color-card)] p-4 ${className}`}>
       {children}
     </div>
   )
@@ -88,7 +88,7 @@ function SectionCard({ children, className = "" }: { children: React.ReactNode; 
 function FieldRow({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <label className="grid gap-1.5">
-      <span className="text-xs font-semibold uppercase tracking-wide text-zinc-400">{label}</span>
+      <span className="text-xs font-semibold uppercase tracking-wide text-[var(--color-slate)]">{label}</span>
       {children}
     </label>
   )
@@ -106,7 +106,7 @@ function WalInput({
   disabled?: boolean
 }) {
   return (
-    <div className="flex items-center gap-2 rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 focus-within:border-sky-500">
+    <div className="flex items-center gap-2 rounded-[var(--radius-button)] border border-[var(--color-hairline)] bg-[var(--color-canvas)] px-3 py-2 focus-within:border-[var(--color-primary)]">
       <input
         type="number"
         min="0"
@@ -115,9 +115,9 @@ function WalInput({
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
         disabled={disabled}
-        className="w-full bg-transparent text-sm text-zinc-100 placeholder-zinc-500 outline-none disabled:opacity-50"
+        className="w-full bg-transparent text-sm text-[var(--color-ink)] placeholder-[var(--color-stone)] outline-none disabled:opacity-50"
       />
-      <span className="shrink-0 font-mono text-xs font-semibold text-sky-400">WAL</span>
+      <span className="shrink-0 font-mono text-xs font-semibold text-[var(--color-primary)]">WAL</span>
     </div>
   )
 }
@@ -125,26 +125,26 @@ function WalInput({
 function TxDraftPanel({ draft, onClose }: { draft: TxDraft; onClose: () => void }) {
   return (
     <div
-      className="t-panel-slide rounded-xl border border-zinc-700 bg-zinc-900 overflow-hidden"
+      className="t-panel-slide rounded-[var(--radius-card)] border border-[var(--color-hairline)] bg-[var(--color-card)] overflow-hidden"
       data-open="true"
     >
-      <div className="flex items-center justify-between border-b border-zinc-800 px-4 py-3">
+      <div className="flex items-center justify-between border-b border-[var(--color-hairline-soft)] px-4 py-3">
         <div className="flex items-center gap-2">
-          <Icon icon="solar:code-square-linear" className="h-4 w-4 text-sky-400" />
-          <span className="text-sm font-semibold text-zinc-100">{draft.label}</span>
-          <span className="rounded-full bg-amber-500/15 px-2 py-0.5 text-xs font-medium text-amber-400">
+          <Icon icon="solar:code-square-linear" className="h-4 w-4 text-[var(--color-primary)]" />
+          <span className="text-sm font-semibold text-[var(--color-ink)]">{draft.label}</span>
+          <span className="rounded-full bg-[var(--color-warning)]/15 px-2 py-0.5 text-xs font-medium text-[var(--color-warning)]">
             draft — not signed
           </span>
         </div>
         <button
           onClick={onClose}
           aria-label="Dismiss draft"
-          className="rounded p-1 text-zinc-500 hover:text-zinc-300 transition-colors"
+          className="rounded p-1 text-[var(--color-stone)] hover:text-[var(--color-charcoal)] transition-colors"
         >
           <Icon icon="solar:close-circle-linear" className="h-4 w-4" />
         </button>
       </div>
-      <pre className="overflow-x-auto p-4 font-mono text-xs leading-relaxed text-zinc-300">
+      <pre className="overflow-x-auto p-4 font-mono text-xs leading-relaxed text-[var(--color-charcoal)]">
         {JSON.stringify(draft.payload, null, 2)}
       </pre>
     </div>
@@ -234,13 +234,13 @@ export function BountyPanel({ formId, records, packageId }: BountyPanelProps) {
     <div className="flex flex-col gap-6">
       {/* Anon mode warning */}
       {anonMode && (
-        <div className="flex items-start gap-3 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3">
-          <Icon icon="solar:danger-triangle-linear" className="mt-0.5 h-5 w-5 shrink-0 text-amber-400" />
-          <div className="text-sm text-amber-200">
+        <div className="flex items-start gap-3 rounded-[var(--radius-card)] border border-[var(--color-warning)]/30 bg-[var(--color-warning)]/10 px-4 py-3">
+          <Icon icon="solar:danger-triangle-linear" className="mt-0.5 h-5 w-5 shrink-0 text-[var(--color-warning)]" />
+          <div className="text-sm text-[var(--color-charcoal)]">
             <span className="font-semibold">Bounty unavailable in anonymous mode.</span>{" "}
             All submissions were collected without wallet addresses. Bounty payouts require a
             submitter address on-chain. Switch the form to{" "}
-            <span className="font-mono text-amber-300">wallet</span> submission mode to enable
+            <span className="font-mono text-[var(--color-warning)]">wallet</span> submission mode to enable
             bounties.
           </div>
         </div>
@@ -250,28 +250,28 @@ export function BountyPanel({ formId, records, packageId }: BountyPanelProps) {
       <SectionCard>
         <div className="flex items-center justify-between gap-4">
           <div>
-            <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-zinc-400">
-              <Icon icon="solar:wallet-linear" className="h-4 w-4 text-sky-400" />
+            <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-[var(--color-slate)]">
+              <Icon icon="solar:wallet-linear" className="h-4 w-4 text-[var(--color-primary)]" />
               Bounty pool
             </div>
             <div className="mt-2 flex items-baseline gap-2">
-              <span className="font-mono text-3xl font-bold text-zinc-100">
+              <span className="font-mono text-3xl font-bold text-[var(--color-ink)]">
                 {mistToWal(poolBalance)}
               </span>
-              <span className="font-mono text-sm font-semibold text-sky-400">WAL</span>
+              <span className="font-mono text-sm font-semibold text-[var(--color-primary)]">WAL</span>
             </div>
-            <p className="mt-1 font-mono text-xs text-zinc-500">
+            <p className="mt-1 font-mono text-xs text-[var(--color-stone)]">
               {poolBalance.toLocaleString()} MIST
             </p>
           </div>
-          <Icon icon="solar:safe-2-linear" className="h-10 w-10 text-zinc-600" />
+          <Icon icon="solar:safe-2-linear" className="h-10 w-10 text-[var(--color-stone)]" />
         </div>
       </SectionCard>
 
       {/* Deposit form */}
       <SectionCard>
-        <h3 className="mb-4 flex items-center gap-2 text-sm font-semibold text-zinc-100">
-          <Icon icon="solar:add-circle-linear" className="h-4 w-4 text-sky-400" />
+        <h3 className="mb-4 flex items-center gap-2 text-sm font-semibold text-[var(--color-ink)]">
+          <Icon icon="solar:add-circle-linear" className="h-4 w-4 text-[var(--color-primary)]" />
           Deposit WAL
         </h3>
         <div className="flex items-end gap-3">
@@ -310,8 +310,8 @@ export function BountyPanel({ formId, records, packageId }: BountyPanelProps) {
 
       {/* Tier config */}
       <SectionCard>
-        <h3 className="mb-4 flex items-center gap-2 text-sm font-semibold text-zinc-100">
-          <Icon icon="solar:chart-2-linear" className="h-4 w-4 text-sky-400" />
+        <h3 className="mb-4 flex items-center gap-2 text-sm font-semibold text-[var(--color-ink)]">
+          <Icon icon="solar:chart-2-linear" className="h-4 w-4 text-[var(--color-primary)]" />
           Bounty tiers
         </h3>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -325,7 +325,7 @@ export function BountyPanel({ formId, records, packageId }: BountyPanelProps) {
             </FieldRow>
           ))}
         </div>
-        <p className="mt-3 text-xs text-zinc-500">
+        <p className="mt-3 text-xs text-[var(--color-stone)]">
           Tier values are read from the on-chain form object. These inputs show a draft view —
           update the form object via <span className="font-mono">set_bounty_tiers</span> to apply.
         </p>
@@ -333,26 +333,26 @@ export function BountyPanel({ formId, records, packageId }: BountyPanelProps) {
 
       {/* Response list — approvable only */}
       <SectionCard>
-        <h3 className="mb-1 flex items-center gap-2 text-sm font-semibold text-zinc-100">
-          <Icon icon="solar:check-circle-linear" className="h-4 w-4 text-sky-400" />
+        <h3 className="mb-1 flex items-center gap-2 text-sm font-semibold text-[var(--color-ink)]">
+          <Icon icon="solar:check-circle-linear" className="h-4 w-4 text-[var(--color-primary)]" />
           Approve &amp; pay
         </h3>
-        <p className="mb-4 text-xs text-zinc-500">
+        <p className="mb-4 text-xs text-[var(--color-stone)]">
           Responses eligible for bounty: status is <span className="font-mono">new</span> or{" "}
           <span className="font-mono">triaged</span>, severity is not{" "}
           <span className="font-mono">none</span>, and submitter address is present.
         </p>
 
         {anonMode ? (
-          <div className="rounded-lg border border-zinc-800 bg-zinc-800/50 p-6 text-center">
-            <Icon icon="solar:user-cross-linear" className="mx-auto h-8 w-8 text-zinc-600" />
-            <p className="mt-2 text-sm text-zinc-500">No wallet addresses — bounty disabled.</p>
+          <div className="rounded-[var(--radius-button)] border border-[var(--color-hairline-soft)] bg-[var(--color-canvas)] p-6 text-center">
+            <Icon icon="solar:user-cross-linear" className="mx-auto h-8 w-8 text-[var(--color-stone)]" />
+            <p className="mt-2 text-sm text-[var(--color-slate)]">No wallet addresses — bounty disabled.</p>
           </div>
         ) : approvableRecords.length === 0 ? (
-          <div className="rounded-lg border border-zinc-800 bg-zinc-800/50 p-6 text-center">
-            <Icon icon="solar:inbox-line-linear" className="mx-auto h-8 w-8 text-zinc-600" />
-            <p className="mt-2 text-sm text-zinc-500">No eligible responses right now.</p>
-            <p className="mt-1 text-xs text-zinc-600">
+          <div className="rounded-[var(--radius-button)] border border-[var(--color-hairline-soft)] bg-[var(--color-canvas)] p-6 text-center">
+            <Icon icon="solar:inbox-line-linear" className="mx-auto h-8 w-8 text-[var(--color-stone)]" />
+            <p className="mt-2 text-sm text-[var(--color-slate)]">No eligible responses right now.</p>
+            <p className="mt-1 text-xs text-[var(--color-stone)]">
               Responses must be new/triaged with a severity and a wallet submitter.
             </p>
           </div>
@@ -367,11 +367,11 @@ export function BountyPanel({ formId, records, packageId }: BountyPanelProps) {
               return (
                 <div
                   key={record.index}
-                  className="rounded-xl border border-zinc-800 bg-zinc-800/40 p-4 flex flex-col gap-3"
+                  className="rounded-[var(--radius-card)] border border-[var(--color-hairline-soft)] bg-[var(--color-canvas)] p-4 flex flex-col gap-3"
                 >
                   <div className="flex items-center justify-between gap-3 flex-wrap">
                     <div className="flex items-center gap-3 min-w-0">
-                      <span className="font-mono text-xs text-zinc-500 shrink-0">
+                      <span className="font-mono text-xs text-[var(--color-stone)] shrink-0">
                         #{record.index}
                       </span>
                       <span
@@ -379,12 +379,12 @@ export function BountyPanel({ formId, records, packageId }: BountyPanelProps) {
                       >
                         {record.ref.severity}
                       </span>
-                      <span className="truncate font-mono text-xs text-zinc-400">
+                      <span className="truncate font-mono text-xs text-[var(--color-slate)]">
                         {record.ref.submitter}
                       </span>
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
-                      <span className="font-mono text-sm font-semibold text-sky-300">
+                      <span className="font-mono text-sm font-semibold text-[var(--color-primary)]">
                         {tierAmount} WAL
                       </span>
                       <Button

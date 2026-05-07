@@ -60,10 +60,7 @@ export function WalformBuilder({ templateSchema = null }: WalformBuilderProps) {
   const selectedField = fields.find((field) => field.id === selectedFieldId) ?? fields[0]
   const draftSchema = useMemo(() => {
     try {
-      const schema = buildWalformSchema(
-        { ...formValues, policyType: policyConfig.type },
-        fields,
-      )
+      const schema = buildWalformSchema({ ...formValues, policyType: policyConfig.type }, fields)
       return { ...schema, policy: policyConfig }
     } catch {
       return null
@@ -106,10 +103,7 @@ export function WalformBuilder({ templateSchema = null }: WalformBuilderProps) {
 
   function saveSchema() {
     try {
-      const schema = buildWalformSchema(
-        { ...formValues, policyType: policyConfig.type },
-        fields,
-      )
+      const schema = buildWalformSchema({ ...formValues, policyType: policyConfig.type }, fields)
       setSavedJson(JSON.stringify({ ...schema, policy: policyConfig }, null, 2))
       setSaveError("")
     } catch (error) {
@@ -154,14 +148,14 @@ export function WalformBuilder({ templateSchema = null }: WalformBuilderProps) {
           <label className="grid gap-2 lg:col-span-2">
             <span className="text-sm font-semibold text-[var(--color-ink)]">Title</span>
             <input
-              className="h-11 rounded-[var(--radius-button)] border border-[var(--color-hairline-soft)] bg-white px-3 text-sm outline-none focus:border-[var(--color-primary)] dark:bg-white/5"
+              className="h-11 rounded-[var(--radius-button)] border border-[var(--color-hairline-soft)] bg-[var(--color-card)] px-3 text-sm text-[var(--color-charcoal)] outline-none placeholder-[var(--color-stone)] focus:border-[var(--color-primary)]"
               {...register("title")}
             />
           </label>
           <label className="grid gap-2">
             <span className="text-sm font-semibold text-[var(--color-ink)]">Mode</span>
             <select
-              className="h-11 rounded-[var(--radius-button)] border border-[var(--color-hairline-soft)] bg-white px-3 text-sm outline-none focus:border-[var(--color-primary)] dark:bg-white/5"
+              className="h-11 rounded-[var(--radius-button)] border border-[var(--color-hairline-soft)] bg-[var(--color-card)] px-3 text-sm text-[var(--color-charcoal)] outline-none focus:border-[var(--color-primary)]"
               {...register("submissionMode")}
             >
               <option value="wallet">Wallet</option>
@@ -171,7 +165,7 @@ export function WalformBuilder({ templateSchema = null }: WalformBuilderProps) {
           <label className="grid gap-2 md:col-span-2 lg:col-span-4">
             <span className="text-sm font-semibold text-[var(--color-ink)]">Description</span>
             <textarea
-              className="min-h-20 rounded-[var(--radius-button)] border border-[var(--color-hairline-soft)] bg-white px-3 py-2 text-sm leading-6 outline-none focus:border-[var(--color-primary)] dark:bg-white/5"
+              className="min-h-20 rounded-[var(--radius-button)] border border-[var(--color-hairline-soft)] bg-[var(--color-card)] px-3 py-2 text-sm leading-6 text-[var(--color-charcoal)] outline-none placeholder-[var(--color-stone)] focus:border-[var(--color-primary)]"
               {...register("description")}
             />
           </label>
@@ -182,9 +176,18 @@ export function WalformBuilder({ templateSchema = null }: WalformBuilderProps) {
           <PolicyPicker value={policyConfig} onChange={setPolicyConfig} />
         </section>
 
-        <div className="grid gap-5 xl:grid-cols-[280px_minmax(0,1fr)_360px]">
+        {/*
+          Layout:
+            < lg  — single column stack (palette → list/preview → inspector)
+            lg    — 2-col: [1fr 320px]. Left = palette+list+preview. Right = sticky inspector.
+            xl    — 3-col: [280px 1fr 360px]. Palette | list/preview | inspector.
+        */}
+        <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_320px] lg:items-start xl:grid-cols-[280px_minmax(0,1fr)_360px]">
+          {/* FieldPalette — own column at xl; stacks inside left col at lg */}
           <FieldPalette onAddField={addField} />
-          <div className="grid gap-5">
+
+          {/* Center content — spans both lg columns minus the inspector at xl */}
+          <div className="grid gap-5 lg:order-first xl:order-none">
             <FieldList
               draggedFieldId={draggedFieldId}
               fields={fields}
@@ -200,7 +203,9 @@ export function WalformBuilder({ templateSchema = null }: WalformBuilderProps) {
               title={formValues.title}
             />
           </div>
-          <div className="grid content-start gap-5">
+
+          {/* Inspector — sticky right rail on lg+, full-width on mobile */}
+          <div className="grid content-start gap-5 lg:sticky lg:top-24 lg:row-span-2 xl:row-span-1">
             {selectedField ? (
               <FieldEditor
                 field={selectedField}
@@ -234,7 +239,7 @@ export function WalformBuilder({ templateSchema = null }: WalformBuilderProps) {
         </div>
 
         {saveError ? (
-          <div className="mt-6 rounded-[var(--radius-button)] border border-red-200 bg-red-50 p-4 text-sm text-[var(--color-error)] dark:border-red-800 dark:bg-red-950">
+          <div className="mt-6 rounded-[var(--radius-button)] border border-[var(--color-error)]/20 bg-[var(--color-error)]/5 p-4 text-sm text-[var(--color-error)] dark:border-[var(--color-error)]/40 dark:bg-[var(--color-error)]/10">
             {saveError}
           </div>
         ) : null}
