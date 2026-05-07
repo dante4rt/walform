@@ -82,6 +82,27 @@ export function createInitialFields(): BuilderField[] {
   return FIELD_TYPES.map((type, index) => createBuilderField(type, index + 1))
 }
 
+export function createBuilderValuesFromSchema(schema: WalformSchema): BuilderFormValues {
+  return {
+    title: schema.title,
+    description: schema.description,
+    vibe: schema.vibe,
+    policyType: schema.policy.type,
+    submissionMode: schema.submission_mode,
+  }
+}
+
+export function createBuilderFieldsFromSchema(schema: WalformSchema): BuilderField[] {
+  return schema.fields.map((field, index) => ({
+    id: field.id || `f${index + 1}`,
+    type: field.type,
+    label: field.label,
+    required: field.required ?? false,
+    options: "options" in field ? field.options : [],
+    max: "max" in field ? field.max : 5,
+  }))
+}
+
 export function getNextFieldIndex(fields: BuilderField[]): number {
   const usedIndexes = fields
     .map((field) => Number.parseInt(field.id.replace(/^f/, ""), 10))
@@ -170,4 +191,16 @@ export function createSharePath(schema: WalformSchema): string {
     .slice(0, 42)
 
   return `/f/${slug || "draft"}`
+}
+
+export function parseTemplateSchema(value: string | string[] | undefined): WalformSchema | null {
+  if (typeof value !== "string" || !value) {
+    return null
+  }
+
+  try {
+    return walformSchema.parse(JSON.parse(value))
+  } catch {
+    return null
+  }
 }

@@ -1,7 +1,7 @@
 "use client"
 
 import { Icon } from "@iconify/react"
-import type { FieldType } from "@walform/shared"
+import type { FieldType, WalformSchema } from "@walform/shared"
 import { useMemo, useState } from "react"
 import { useForm, useWatch } from "react-hook-form"
 
@@ -9,7 +9,9 @@ import { Button } from "@/components/ui/button"
 
 import {
   buildWalformSchema,
+  createBuilderFieldsFromSchema,
   createBuilderField,
+  createBuilderValuesFromSchema,
   createInitialFields,
   createSharePath,
   DEFAULT_BUILDER_VALUES,
@@ -23,21 +25,31 @@ import { FieldList } from "./field-list"
 import { FieldPalette } from "./field-palette"
 import { FormPreview } from "./form-preview"
 
-export function WalformBuilder() {
+interface WalformBuilderProps {
+  templateSchema?: WalformSchema | null
+}
+
+export function WalformBuilder({ templateSchema = null }: WalformBuilderProps) {
+  const defaultValues = useMemo(
+    () => (templateSchema ? createBuilderValuesFromSchema(templateSchema) : DEFAULT_BUILDER_VALUES),
+    [templateSchema],
+  )
   const { control, register } = useForm<BuilderFormValues>({
-    defaultValues: DEFAULT_BUILDER_VALUES,
+    defaultValues,
   })
   const values = useWatch({ control })
-  const [fields, setFields] = useState(createInitialFields)
-  const [selectedFieldId, setSelectedFieldId] = useState("f1")
+  const [fields, setFields] = useState(() =>
+    templateSchema ? createBuilderFieldsFromSchema(templateSchema) : createInitialFields(),
+  )
+  const [selectedFieldId, setSelectedFieldId] = useState(() => fields[0]?.id ?? "f1")
   const [draggedFieldId, setDraggedFieldId] = useState<string | null>(null)
   const [previewMode, setPreviewMode] = useState<"mobile" | "desktop">("desktop")
   const [savedJson, setSavedJson] = useState("")
   const [saveError, setSaveError] = useState("")
 
   const formValues = useMemo<BuilderFormValues>(
-    () => ({ ...DEFAULT_BUILDER_VALUES, ...values }),
-    [values],
+    () => ({ ...defaultValues, ...values }),
+    [defaultValues, values],
   )
   const selectedField = fields.find((field) => field.id === selectedFieldId) ?? fields[0]
   const draftSchema = useMemo(() => {
@@ -103,8 +115,9 @@ export function WalformBuilder() {
               Create a Walform
             </h1>
             <p className="mt-3 max-w-2xl text-sm leading-6 text-[var(--color-slate)]">
-              Compose a wallet-aware schema, reorder fields, preview it, and export the exact JSON
-              that gets stored on Walrus.
+              {templateSchema
+                ? "Template loaded. Adjust the fields, preview it, and export the exact JSON that gets stored on Walrus."
+                : "Compose a wallet-aware schema, reorder fields, preview it, and export the exact JSON that gets stored on Walrus."}
             </p>
           </div>
           <div className="flex flex-col gap-2 sm:flex-row">

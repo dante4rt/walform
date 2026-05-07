@@ -1,5 +1,11 @@
-import { WalformBuilder } from "@/components/builder"
+import { Suspense } from "react"
+
+import { BuilderEntry } from "@/components/builder"
 
 export default function BuilderPage() {
-  return <WalformBuilder />
+  return (
+    <Suspense>
+      <BuilderEntry />
+    </Suspense>
+  )
 }
