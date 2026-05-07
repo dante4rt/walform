@@ -6,7 +6,10 @@ interface FormPageProps {
 }
 
 export function generateStaticParams() {
-  return [{ formId: "demo" }]
+  const demoFormId = process.env.NEXT_PUBLIC_WALFORM_DEMO_FORM_ID
+  const formIds = ["demo", demoFormId].filter((formId): formId is string => Boolean(formId))
+
+  return [...new Set(formIds)].map((formId) => ({ formId }))
 }
 
 export default async function FormPage({ params }: FormPageProps) {
