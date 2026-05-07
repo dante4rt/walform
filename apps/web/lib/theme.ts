@@ -30,13 +30,27 @@ export function resolveTheme(theme: Theme): "light" | "dark" {
 }
 
 /**
- * Apply the theme by toggling the `dark` class on <html>.
- * Called once on mount and whenever the preference changes.
+ * Apply the theme by toggling `dark` and `light` classes on <html>.
+ * - "light": adds .light (blocks OS media query), removes .dark
+ * - "dark": removes .light, adds .dark
+ * - "system": removes .light (allows OS media query), toggles .dark based on OS
  */
 export function applyTheme(theme: Theme): void {
   if (typeof document === "undefined") return
   const resolved = resolveTheme(theme)
-  document.documentElement.classList.toggle("dark", resolved === "dark")
+  const root = document.documentElement
+
+  if (theme === "light") {
+    root.classList.add("light")
+    root.classList.remove("dark")
+  } else if (theme === "dark") {
+    root.classList.remove("light")
+    root.classList.add("dark")
+  } else {
+    // system — let the OS media query control dark/light
+    root.classList.remove("light")
+    root.classList.toggle("dark", resolved === "dark")
+  }
 }
 
 /** Subscribe to OS-level theme changes. Returns an unsubscribe function. */

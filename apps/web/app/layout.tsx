@@ -53,8 +53,9 @@ const themeInitScript = `
 (function(){
   try{
     var t=localStorage.getItem("walform:theme");
-    var d=t==="dark"||(t!=="light"&&matchMedia("(prefers-color-scheme:dark)").matches);
-    if(d)document.documentElement.classList.add("dark");
+    if(t==="light"){document.documentElement.classList.add("light");return}
+    if(t==="dark"){document.documentElement.classList.add("dark");return}
+    if(matchMedia("(prefers-color-scheme:dark)").matches)document.documentElement.classList.add("dark");
   }catch(e){}
 })()
 `
