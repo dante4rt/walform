@@ -1,5 +1,7 @@
 import Link from "next/link"
 
+import { CostBadge } from "@/components/CostBadge"
+
 const featureTiles = [
   {
     title: "Form builder",
@@ -48,6 +50,8 @@ export default function Home() {
                 See live demo
               </Link>
             </div>
+            <div className="mt-4">
+              <CostBadge /></div>
           </div>
 
           <div className="relative">

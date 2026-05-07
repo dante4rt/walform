@@ -1,10 +1,11 @@
 "use client"
 
 import { Icon } from "@iconify/react"
-import type { FieldType, WalformSchema } from "@walform/shared"
+import type { FieldType, PolicyConfig, WalformSchema } from "@walform/shared"
 import { useMemo, useState } from "react"
 import { useForm, useWatch } from "react-hook-form"
 
+import { CostBadge } from "@/components/CostBadge"
 import { Button } from "@/components/ui/button"
 
 import {
@@ -24,6 +25,7 @@ import { FieldEditor } from "./field-editor"
 import { FieldList } from "./field-list"
 import { FieldPalette } from "./field-palette"
 import { FormPreview } from "./form-preview"
+import { PolicyPicker } from "./PolicyPicker"
 
 interface WalformBuilderProps {
   templateSchema?: WalformSchema | null
@@ -44,6 +46,10 @@ export function WalformBuilder({ templateSchema = null }: WalformBuilderProps) {
   const [selectedFieldId, setSelectedFieldId] = useState(() => fields[0]?.id ?? "f1")
   const [draggedFieldId, setDraggedFieldId] = useState<string | null>(null)
   const [previewMode, setPreviewMode] = useState<"mobile" | "desktop">("desktop")
+  const [policyConfig, setPolicyConfig] = useState<PolicyConfig>(() => ({
+    type: defaultValues.policyType,
+    config: {},
+  }))
   const [savedJson, setSavedJson] = useState("")
   const [saveError, setSaveError] = useState("")
 
@@ -54,11 +60,15 @@ export function WalformBuilder({ templateSchema = null }: WalformBuilderProps) {
   const selectedField = fields.find((field) => field.id === selectedFieldId) ?? fields[0]
   const draftSchema = useMemo(() => {
     try {
-      return buildWalformSchema(formValues, fields)
+      const schema = buildWalformSchema(
+        { ...formValues, policyType: policyConfig.type },
+        fields,
+      )
+      return { ...schema, policy: policyConfig }
     } catch {
       return null
     }
-  }, [fields, formValues])
+  }, [fields, formValues, policyConfig])
   const sharePath = draftSchema ? createSharePath(draftSchema) : "/f/draft"
 
   function addField(type: FieldType) {
@@ -96,8 +106,11 @@ export function WalformBuilder({ templateSchema = null }: WalformBuilderProps) {
 
   function saveSchema() {
     try {
-      const schema = buildWalformSchema(formValues, fields)
-      setSavedJson(JSON.stringify(schema, null, 2))
+      const schema = buildWalformSchema(
+        { ...formValues, policyType: policyConfig.type },
+        fields,
+      )
+      setSavedJson(JSON.stringify({ ...schema, policy: policyConfig }, null, 2))
       setSaveError("")
     } catch (error) {
       setSavedJson("")
@@ -119,6 +132,9 @@ export function WalformBuilder({ templateSchema = null }: WalformBuilderProps) {
                 ? "Template loaded. Adjust the fields, preview it, and export the exact JSON that gets stored on Walrus."
                 : "Compose a wallet-aware schema, reorder fields, preview it, and export the exact JSON that gets stored on Walrus."}
             </p>
+            <div className="mt-3">
+              <CostBadge responseCount={fields.length} />
+            </div>
           </div>
           <div className="flex flex-col gap-2 sm:flex-row">
             <Button onClick={saveSchema} type="button" variant="accent">
@@ -143,18 +159,6 @@ export function WalformBuilder({ templateSchema = null }: WalformBuilderProps) {
             />
           </label>
           <label className="grid gap-2">
-            <span className="text-sm font-semibold text-[var(--color-ink)]">Policy</span>
-            <select
-              className="h-11 rounded-[var(--radius-button)] border border-[var(--color-hairline-soft)] bg-white px-3 text-sm outline-none focus:border-[var(--color-primary)] dark:bg-white/5"
-              {...register("policyType")}
-            >
-              <option value="open">Open</option>
-              <option value="token_gated">Token gated</option>
-              <option value="allowlist">Allowlist</option>
-              <option value="time_locked">Time locked</option>
-            </select>
-          </label>
-          <label className="grid gap-2">
             <span className="text-sm font-semibold text-[var(--color-ink)]">Mode</span>
             <select
               className="h-11 rounded-[var(--radius-button)] border border-[var(--color-hairline-soft)] bg-white px-3 text-sm outline-none focus:border-[var(--color-primary)] dark:bg-white/5"
@@ -171,6 +175,11 @@ export function WalformBuilder({ templateSchema = null }: WalformBuilderProps) {
               {...register("description")}
             />
           </label>
+        </section>
+
+        <section className="mb-6 rounded-[var(--radius-card)] border border-[var(--color-hairline-soft)] bg-[var(--color-card)] p-5 shadow-[var(--shadow-card)]">
+          <h2 className="mb-4 text-sm font-semibold text-[var(--color-ink)]">Access policy</h2>
+          <PolicyPicker value={policyConfig} onChange={setPolicyConfig} />
         </section>
 
         <div className="grid gap-5 xl:grid-cols-[280px_minmax(0,1fr)_360px]">

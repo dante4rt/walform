@@ -8,7 +8,13 @@ import { useEffect, useMemo, useState } from "react"
 import { Button } from "@/components/ui"
 import { toCsv, type CsvColumn } from "@/lib/csv"
 
+import { getConfiguredPackageId } from "@/lib/sui"
+
 import { loadAdminRecords, saveAdminNote, type AdminResponseRecord } from "./admin-adapter"
+import { BountyPanel } from "./BountyPanel"
+import { CostPanel } from "./CostPanel"
+
+type AdminTab = "responses" | "cost" | "bounty"
 
 type DateFilter = "all" | "24h" | "7d"
 
@@ -62,6 +68,7 @@ export function AdminDashboard({ formId }: AdminDashboardProps) {
   const [loadState, setLoadState] = useState<"loading" | "ready" | "error">("loading")
   const [noteState, setNoteState] = useState<"idle" | "saving" | "saved" | "error">("idle")
   const [now] = useState(() => Date.now())
+  const [activeTab, setActiveTab] = useState<AdminTab>("responses")
 
   useEffect(() => {
     let cancelled = false
@@ -189,6 +196,64 @@ export function AdminDashboard({ formId }: AdminDashboardProps) {
           </div>
         </header>
 
+        {/* Tab navigation */}
+        <nav
+          className="flex gap-1 border-b border-[var(--color-hairline-soft)]"
+          role="tablist"
+          aria-label="Dashboard sections"
+        >
+          <TabButton
+            id="tab-responses"
+            controls="panel-responses"
+            active={activeTab === "responses"}
+            icon="solar:inbox-line-linear"
+            label="Responses"
+            onClick={() => setActiveTab("responses")}
+          />
+          <TabButton
+            id="tab-cost"
+            controls="panel-cost"
+            active={activeTab === "cost"}
+            icon="solar:chart-2-linear"
+            label="Cost"
+            onClick={() => setActiveTab("cost")}
+          />
+          <TabButton
+            id="tab-bounty"
+            controls="panel-bounty"
+            active={activeTab === "bounty"}
+            icon="solar:medal-ribbons-star-linear"
+            label="Bounty"
+            onClick={() => setActiveTab("bounty")}
+          />
+        </nav>
+
+        {/* Cost tab */}
+        {activeTab === "cost" && (
+          <div
+            id="panel-cost"
+            role="tabpanel"
+            aria-labelledby="tab-cost"
+            className="rounded-lg border border-[var(--color-hairline-soft)] bg-[var(--color-card)] p-6 shadow-[var(--shadow-card)]"
+          >
+            <CostPanel responseCount={records.length} />
+          </div>
+        )}
+
+        {/* Bounty tab */}
+        {activeTab === "bounty" && (
+          <div id="panel-bounty" role="tabpanel" aria-labelledby="tab-bounty">
+            <BountyPanel
+              formId={formId}
+              records={records}
+              packageId={getConfiguredPackageId() ?? "0xwalform_demo"}
+            />
+          </div>
+        )}
+
+        {/* Responses tab — metrics + list */}
+        {activeTab === "responses" && (
+          <div id="panel-responses" role="tabpanel" aria-labelledby="tab-responses" className="flex flex-col gap-6">
         <section className="grid gap-3 md:grid-cols-4">
           <MetricCard label="Decrypted" value={records.length.toString()} icon="solar:lock-keyhole-unlocked-linear" />
           <MetricCard label="Prioritized" value={filteredRecords.length.toString()} icon="solar:sort-by-time-linear" />
@@ -330,8 +395,44 @@ export function AdminDashboard({ formId }: AdminDashboardProps) {
             ) : null}
           </aside>
         </section>
+          </div>
+        )}
       </div>
     </main>
+  )
+}
+
+function TabButton({
+  id,
+  controls,
+  active,
+  icon,
+  label,
+  onClick,
+}: {
+  id?: string
+  controls?: string
+  active: boolean
+  icon: string
+  label: string
+  onClick: () => void
+}) {
+  return (
+    <button
+      id={id}
+      role="tab"
+      aria-selected={active}
+      aria-controls={controls}
+      onClick={onClick}
+      className={`flex items-center gap-2 border-b-2 px-4 py-2.5 text-sm font-semibold transition-colors ${
+        active
+          ? "border-[var(--color-primary)] text-[var(--color-primary)]"
+          : "border-transparent text-[var(--color-slate)] hover:text-[var(--color-ink)]"
+      }`}
+    >
+      <Icon icon={icon} className="h-4 w-4" />
+      {label}
+    </button>
   )
 }
 
