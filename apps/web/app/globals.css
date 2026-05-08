@@ -344,31 +344,48 @@ body {
   transform: scale(0.98);
 }
 
-.hero-word-proof,
-.hero-word-privacy {
-  color: var(--color-primary);
+.hero-word-proof {
+  background: linear-gradient(135deg, #10b981, #06b6d4);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 
 .hero-word-privacy {
-  color: #2563eb;
+  background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 
 @media (prefers-color-scheme: dark) {
   :root:not(.light) .hero-word-proof {
-    color: #5eead4;
+    background: linear-gradient(135deg, #5eead4, #22d3ee);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
   }
 
   :root:not(.light) .hero-word-privacy {
-    color: #93c5fd;
+    background: linear-gradient(135deg, #93c5fd, #c4b5fd);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
   }
 }
 
 :root.dark .hero-word-proof {
-  color: #5eead4;
+  background: linear-gradient(135deg, #5eead4, #22d3ee);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 
 :root.dark .hero-word-privacy {
-  color: #93c5fd;
+  background: linear-gradient(135deg, #93c5fd, #c4b5fd);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 
 .fina-portrait {

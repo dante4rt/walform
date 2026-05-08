@@ -5,8 +5,6 @@ import Image from "next/image"
 import Link from "next/link"
 import { type ReactNode, useEffect, useRef, useState } from "react"
 
-import { CostBadge } from "@/components/CostBadge"
-
 function useScrollReveal() {
   const ref = useRef<HTMLDivElement>(null)
 
@@ -98,8 +96,8 @@ const differentiators = [
   },
   {
     icon: "solar:window-frame-linear",
-    title: "Walrus Sites delivery",
-    copy: "App served from Walrus. No central server.",
+    title: "Walrus Sites ready",
+    copy: "Deploy as a Walrus Site with one command. No central server.",
   },
   {
     icon: "solar:code-square-linear",
@@ -189,7 +187,7 @@ function StatCard({ value, label }: { value: string; label: string }) {
 function ProductMockup() {
   return (
     <div className="relative">
-      <div className="absolute -right-6 top-20 hidden w-44 space-y-3 lg:block">
+      <div className="absolute -right-6 top-20 z-10 hidden w-44 space-y-3 lg:block">
         {[
           ["solar:shield-keyhole-linear", "Response encrypted with Seal"],
           ["solar:database-linear", "Stored as Walrus blob"],
@@ -212,9 +210,14 @@ function ProductMockup() {
         <div className="rounded-[18px] border border-[var(--color-hairline-soft)] bg-[var(--color-canvas)] p-5">
           <div className="mb-5 flex items-start justify-between gap-4">
             <div>
-              <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--color-slate)]">
-                Builder
-              </p>
+              <div className="flex items-center gap-2">
+                <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--color-slate)]">
+                  Builder
+                </p>
+                <span className="rounded-full bg-[var(--color-tint-mint)] px-2 py-0.5 text-[9px] font-bold text-[var(--color-primary-deep)]">
+                  PREVIEW
+                </span>
+              </div>
               <h2 className="mt-1 text-lg font-bold text-[var(--color-ink)]">
                 Walrus sessions feedback
               </h2>
@@ -224,7 +227,7 @@ function ProductMockup() {
             </span>
           </div>
 
-          <div className="grid gap-3">
+          <div className="pointer-events-none grid gap-3 opacity-80">
             <FieldPreview label="What worked well?" meta="Long text" required />
             <FieldPreview label="Overall rating" meta="Scale 1-10" required />
             <FieldPreview label="Attach screenshot" meta="File upload" />
@@ -247,7 +250,7 @@ export default function Home() {
   return (
     <main
       ref={scrollRef}
-      className="grain-overlay landing-bg min-h-[100dvh] overflow-hidden bg-[var(--color-canvas)] text-[var(--color-charcoal)]"
+      className="grain-overlay landing-bg min-h-[100dvh] bg-[var(--color-canvas)] text-[var(--color-charcoal)]"
     >
       <section className="relative mx-auto grid max-w-7xl gap-12 px-5 pb-16 pt-12 md:grid-cols-[0.95fr_1.05fr] md:items-center md:px-8 md:pb-24 md:pt-20">
         <div className="scroll-reveal relative z-10">
@@ -272,16 +275,40 @@ export default function Home() {
               See live demo
             </Link>
           </div>
-          <div className="mt-5 flex flex-wrap gap-3">
-            <CostBadge />
-            {["Seal encrypted", "Walrus blobs", "Sui receipts"].map((label) => (
-              <span
-                key={label}
-                className="inline-flex min-h-9 items-center rounded-[var(--radius-button)] border border-[var(--color-hairline-soft)] bg-[var(--color-card)] px-3 text-xs font-semibold text-[var(--color-slate)]"
-              >
-                {label}
-              </span>
-            ))}
+          <div className="mt-5 flex flex-wrap items-center gap-2 text-xs text-[var(--color-slate)]">
+            <span className="inline-flex items-center gap-1.5">
+              <Icon
+                icon="solar:lock-keyhole-linear"
+                width={14}
+                height={14}
+                className="text-[var(--color-primary)]"
+              />
+              Seal encrypted
+            </span>
+            <span className="text-[var(--color-hairline)]">·</span>
+            <span className="inline-flex items-center gap-1.5">
+              <Icon
+                icon="solar:database-linear"
+                width={14}
+                height={14}
+                className="text-[var(--color-primary)]"
+              />
+              Walrus blobs
+            </span>
+            <span className="text-[var(--color-hairline)]">·</span>
+            <span className="inline-flex items-center gap-1.5">
+              <Icon
+                icon="solar:verified-check-linear"
+                width={14}
+                height={14}
+                className="text-[var(--color-primary)]"
+              />
+              Sui receipts
+            </span>
+            <span className="text-[var(--color-hairline)]">·</span>
+            <span className="font-semibold text-[var(--color-charcoal)]">
+              ~0.002 WAL / response
+            </span>
           </div>
         </div>
 
@@ -327,9 +354,14 @@ export default function Home() {
         <div className="scroll-reveal rounded-[var(--radius-hero)] border border-[var(--color-hairline-soft)] bg-[var(--color-card)] p-5 shadow-[var(--shadow-card)] md:p-7">
           <div className="grid gap-8 lg:grid-cols-[0.92fr_1.08fr]">
             <div>
-              <p className="text-sm font-semibold text-[var(--color-slate)]">Meet Founder Fina</p>
+              <p className="text-sm font-semibold text-[var(--color-slate)]">
+                Meet Founder Fina{" "}
+                <span className="rounded-full bg-[var(--color-tint-cream)] px-2 py-0.5 text-[10px] font-bold text-[var(--color-accent-deep)]">
+                  Persona
+                </span>
+              </p>
               <p className="mt-1 text-xs text-[var(--color-stone)]">
-                Solo or 2-person team shipping a Sui/Walrus dApp
+                A representative persona for solo or 2-person teams shipping a Sui/Walrus dApp
               </p>
               <div className="mt-5 flex flex-col gap-5 sm:flex-row">
                 <AssetImage
@@ -435,7 +467,8 @@ export default function Home() {
         <div className="scroll-reveal">
           <h2 className="text-2xl font-bold text-[var(--color-ink)]">Composable for developers</h2>
           <p className="mt-3 max-w-md text-sm leading-6 text-[var(--color-slate)]">
-            Import Walform modules or call Move functions directly.
+            Call Walform Move functions directly from your own Sui dApp. SDK available as an
+            internal package.
           </p>
           <div className="mt-6 grid gap-3 sm:grid-cols-2">
             {moveFunctions.map(([name, desc]) => (
@@ -451,28 +484,48 @@ export default function Home() {
             ))}
           </div>
         </div>
-        <div className="scroll-reveal rounded-[var(--radius-card)] border border-[var(--color-hairline-soft)] bg-[var(--color-card)] p-5 shadow-[var(--shadow-card)]">
+        <div className="scroll-reveal min-w-0 overflow-hidden rounded-[var(--radius-card)] border border-[var(--color-hairline-soft)] bg-[var(--color-card)] p-5 shadow-[var(--shadow-card)]">
           <div className="mb-4 flex items-center justify-between border-b border-[var(--color-hairline-soft)] pb-3">
             <span className="font-mono text-xs font-bold text-[var(--color-primary)]">
               TypeScript
             </span>
             <span className="rounded-[var(--radius-button)] border border-[var(--color-hairline-soft)] px-2 py-1 text-[10px] font-bold text-[var(--color-slate)]">
-              SDK preview
+              Example
             </span>
           </div>
-          <pre className="overflow-x-auto font-mono text-xs leading-6 text-[var(--color-charcoal)]">
-            <code>{`import { walrusClient } from "@mysten/walrus"
-import { seal } from "@mysten/seal"
+          <pre className="overflow-x-auto font-mono text-[11px] leading-6 text-[var(--color-charcoal)]">
+            <code>{`import { WalrusClient } from "@mysten/walrus"
+import { SealClient } from "@mysten/seal"
+import { Transaction } from "@mysten/sui/transactions"
 
-const client = new WalrusClient({ network: "mainnet" })
-
-const encrypted = await seal.encrypt({
-  content: response,
-  policy: { threshold: 2, admins: [admin1, admin2] },
+const walrus = new WalrusClient({
+  network: "mainnet",
+})
+const seal = new SealClient({
+  serverObjectIds,
 })
 
-const blobId = await client.storeBlob(encrypted)
-await walform.submit({ formId, blobId, metadata })`}</code>
+const { encryptedObject } = await seal
+  .encrypt({
+    threshold: 2,
+    packageId: WALFORM_PACKAGE_ID,
+    identity: formId,
+    data: new TextEncoder()
+      .encode(JSON.stringify(response)),
+  })
+
+const blobId = await walrus
+  .storeBlob(encryptedObject)
+
+const tx = new Transaction()
+tx.moveCall({
+  target: WALFORM_PACKAGE_ID
+    + "::form::submit_response",
+  arguments: [
+    tx.object(formId),
+    tx.pure.vector("u8", blobId),
+  ],
+})`}</code>
           </pre>
         </div>
       </section>
