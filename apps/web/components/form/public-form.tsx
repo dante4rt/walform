@@ -1,12 +1,7 @@
 "use client"
 
 import { Icon } from "@iconify/react"
-import {
-  ConnectButton,
-  useCurrentAccount,
-  useSignAndExecuteTransaction,
-  useSuiClient,
-} from "@mysten/dapp-kit"
+import { useCurrentAccount, useSignAndExecuteTransaction, useSuiClient } from "@mysten/dapp-kit"
 import type { FormField, Severity, SubmissionMode, WalformSchema } from "@walform/shared"
 import Link from "next/link"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
@@ -37,45 +32,13 @@ type StarRatingField = Extract<FormField, { type: "star_rating" }>
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
-function truncateId(id: string): string {
-  if (id.length <= 12) return id
-  return `${id.slice(0, 8)}...${id.slice(-4)}`
-}
-
 function FormIdChip({ formId }: { formId: string }) {
-  const [copied, setCopied] = useState(false)
-
-  function handleCopy() {
-    void navigator.clipboard.writeText(formId).then(() => {
-      setCopied(true)
-      setTimeout(() => setCopied(false), 2000)
-    })
-  }
-
   return (
-    <span className="inline-flex items-center gap-1.5">
-      <span
-        className="inline-flex items-center gap-1 rounded-[var(--radius-pill)] border border-[var(--color-hairline-soft)] bg-[var(--color-tint-mint)] px-3 py-1 font-mono text-xs text-[var(--color-primary-deep)]"
-        title={formId}
-      >
-        {truncateId(formId)}
-      </span>
-      <button
-        aria-label="Copy form ID"
-        className="flex size-6 items-center justify-center rounded-[var(--radius-button)] text-[var(--color-slate)] transition-colors hover:bg-[var(--color-tint-mint)] hover:text-[var(--color-primary)]"
-        onClick={handleCopy}
-        type="button"
-      >
-        {copied ? (
-          <Icon
-            aria-hidden
-            icon="solar:check-circle-linear"
-            className="size-3.5 text-[var(--color-success)]"
-          />
-        ) : (
-          <Icon aria-hidden icon="solar:copy-linear" className="size-3.5" />
-        )}
-      </button>
+    <span
+      className="inline-block rounded-[var(--radius-pill)] bg-[var(--color-tint-mint)] px-2 py-0.5 font-mono text-[10px] text-[var(--color-primary-deep)]"
+      title={formId}
+    >
+      {formId}
     </span>
   )
 }
@@ -309,20 +272,6 @@ export function PublicForm({ formId, schema }: PublicFormProps) {
                 ))}
               </select>
             </label>
-            {submissionMode === "wallet" ? (
-              <div className="grid gap-2 md:col-span-2">
-                <span className="text-sm font-semibold text-[var(--color-ink)]">Wallet</span>
-                <div className="flex flex-col gap-3 rounded-[var(--radius-button)] border border-[var(--color-hairline-soft)] bg-[var(--color-card)] p-3 sm:flex-row sm:items-center sm:justify-between">
-                  <span className="break-all font-mono text-xs text-[var(--color-slate)]">
-                    {currentAccount?.address ?? "Connect a testnet wallet to execute the Sui tx."}
-                  </span>
-                  <ConnectButton
-                    className="h-10 rounded-[var(--radius-button)] bg-[var(--color-primary)] px-4 text-sm font-semibold text-white"
-                    connectText="Connect wallet"
-                  />
-                </div>
-              </div>
-            ) : null}
           </div>
 
           {status === "error" ? (

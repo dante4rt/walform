@@ -46,7 +46,7 @@ export type FormField = BaseField | OptionField | StarRatingField
 
 export interface PolicyConfig {
   type: PolicyType
-  config: Record<string, unknown>
+  config: Record<string, any>
 }
 
 export interface EncryptionConfig {
@@ -82,7 +82,7 @@ export interface WalformResponse {
   form_id: string
   submitted_at_ms: number
   submitter: string | null
-  answers: Record<string, unknown>
+  answers: Record<string, any>
   severity: Severity | null
   client_meta: {
     submission_mode: SubmissionMode

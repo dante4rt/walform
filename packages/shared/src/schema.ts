@@ -64,7 +64,7 @@ export const walformSchema = z.object({
   fields: z.array(formFieldSchema).min(1),
   policy: z.object({
     type: z.enum(POLICY_TYPES),
-    config: z.record(z.string(), z.unknown()),
+    config: z.record(z.string(), z.any()),
   }),
   encryption: z.object({
     mode: z.literal("seal"),
@@ -88,7 +88,7 @@ export const walformResponseSchema = z.object({
   form_id: z.string().min(1),
   submitted_at_ms: z.number().int().nonnegative(),
   submitter: z.string().nullable(),
-  answers: z.record(z.string(), z.unknown()),
+  answers: z.record(z.string(), z.any()),
   severity: z.enum(SEVERITIES).nullable(),
   client_meta: z.object({
     submission_mode: z.enum(["wallet", "signed_anon"]),
