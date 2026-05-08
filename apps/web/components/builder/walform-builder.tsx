@@ -1,11 +1,18 @@
 "use client"
 
 import { Icon } from "@iconify/react"
+import { useCurrentAccount, useSignAndExecuteTransaction, useSuiClient } from "@mysten/dapp-kit"
 import type { FieldType, PolicyConfig, WalformSchema } from "@walform/shared"
 import { useMemo, useState } from "react"
 import { useForm, useWatch } from "react-hook-form"
 
 import { Button } from "@/components/ui/button"
+import {
+  createFormTransaction,
+  extractCreatedObjectId,
+  getConfiguredPackageId,
+  getConfiguredSuiChain,
+} from "@/lib/sui"
 
 import {
   buildWalformSchema,
@@ -52,20 +59,30 @@ export function WalformBuilder({ templateSchema = null }: WalformBuilderProps) {
   const [saveError, setSaveError] = useState("")
   const [copied, setCopied] = useState(false)
   const [centerTab, setCenterTab] = useState<"fields" | "preview">("fields")
+  const [deployState, setDeployState] = useState<"idle" | "signing" | "success" | "error">("idle")
+  const [deployedFormId, setDeployedFormId] = useState<string | null>(null)
+  const [deployError, setDeployError] = useState("")
+
+  const currentAccount = useCurrentAccount()
+  const suiClient = useSuiClient()
+  const { mutateAsync: signAndExecuteTransaction } = useSignAndExecuteTransaction({
+    execute: async ({ bytes, signature }) =>
+      suiClient.executeTransactionBlock({
+        transactionBlock: bytes,
+        signature,
+        options: {
+          showEffects: true,
+          showObjectChanges: true,
+          showRawEffects: true,
+        },
+      }),
+  })
 
   const formValues = useMemo<BuilderFormValues>(
     () => ({ ...defaultValues, ...values }),
     [defaultValues, values],
   )
   const selectedField = fields.find((field) => field.id === selectedFieldId) ?? fields[0]
-  const draftSchema = useMemo(() => {
-    try {
-      const schema = buildWalformSchema({ ...formValues, policyType: policyConfig.type }, fields)
-      return { ...schema, policy: policyConfig }
-    } catch {
-      return null
-    }
-  }, [fields, formValues, policyConfig])
 
   function addField(type: FieldType) {
     const nextField = createBuilderField(type, getNextFieldIndex(fields))
@@ -107,11 +124,10 @@ export function WalformBuilder({ templateSchema = null }: WalformBuilderProps) {
       const json = JSON.stringify(fullSchema, null, 2)
       setSavedJson(json)
       setSaveError("")
-      // Persist for the form page to pick up as a live preview.
       try {
         localStorage.setItem("walform:builder-preview", JSON.stringify(fullSchema))
       } catch {
-        // localStorage full or unavailable — not critical.
+        // not critical
       }
     } catch (error) {
       setSavedJson("")
@@ -119,16 +135,93 @@ export function WalformBuilder({ templateSchema = null }: WalformBuilderProps) {
     }
   }
 
-  async function copyJson() {
-    if (!savedJson) return
+  async function deployForm() {
+    const packageId = getConfiguredPackageId()
+    if (!packageId) {
+      setDeployError("NEXT_PUBLIC_WALFORM_PACKAGE_ID is not configured.")
+      setDeployState("error")
+      return
+    }
+    if (!currentAccount) {
+      setDeployError("Connect a wallet from the navbar first.")
+      setDeployState("error")
+      return
+    }
+
     try {
-      await navigator.clipboard.writeText(savedJson)
+      setDeployState("signing")
+      setDeployError("")
+      setDeployedFormId(null)
+
+      // Build + validate schema.
+      const schema = buildWalformSchema({ ...formValues, policyType: policyConfig.type }, fields)
+      const fullSchema = { ...schema, policy: policyConfig }
+      const schemaJson = JSON.stringify(fullSchema)
+
+      // Generate a deterministic blob ID from the schema content.
+      const schemaBytes = new TextEncoder().encode(schemaJson)
+      const digest = await crypto.subtle.digest("SHA-256", schemaBytes)
+      const blobId = [...new Uint8Array(digest)]
+        .map((b) => b.toString(16).padStart(2, "0"))
+        .join("")
+
+      // Create + sign the Sui transaction.
+      const tx = createFormTransaction(packageId, blobId)
+      const result = await signAndExecuteTransaction({
+        transaction: tx,
+        chain: getConfiguredSuiChain(),
+        account: currentAccount,
+      })
+
+      // Extract the new Form object ID from the transaction effects.
+      const formObjectId = extractCreatedObjectId(result, "::form::Form")
+      if (!formObjectId) {
+        throw new Error(
+          "Transaction succeeded but no Form object was created. Check the transaction on Suiscan.",
+        )
+      }
+
+      // Persist schema so the form page can render it.
+      try {
+        localStorage.setItem(`walform:schema:${formObjectId}`, schemaJson)
+      } catch {
+        // not critical
+      }
+
+      // Also persist for the /f/demo preview.
+      try {
+        localStorage.setItem("walform:builder-preview", schemaJson)
+      } catch {
+        // not critical
+      }
+
+      setDeployedFormId(formObjectId)
+      setDeployState("success")
+
+      // Update the JSON view with on-chain metadata.
+      setSavedJson(
+        JSON.stringify({ ...fullSchema, _onChainFormId: formObjectId, _blobId: blobId }, null, 2),
+      )
+    } catch (error) {
+      setDeployState("error")
+      setDeployError(error instanceof Error ? error.message : "Deployment failed.")
+    }
+  }
+
+  async function copyText(text: string) {
+    try {
+      await navigator.clipboard.writeText(text)
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)
     } catch {
-      // Fallback: select the pre content
+      // fallback
     }
   }
+
+  const explorerBase =
+    getConfiguredSuiChain() === "sui:mainnet"
+      ? "https://suiscan.xyz/mainnet"
+      : "https://suiscan.xyz/testnet"
 
   return (
     <main className="min-h-[100dvh] bg-[var(--color-canvas)] px-5 py-8 text-[var(--color-charcoal)] md:px-8">
@@ -141,14 +234,27 @@ export function WalformBuilder({ templateSchema = null }: WalformBuilderProps) {
             </h1>
             <p className="mt-3 max-w-2xl text-sm leading-6 text-[var(--color-slate)]">
               {templateSchema
-                ? "Template loaded. Adjust the fields, preview it, and export the exact JSON that gets stored on Walrus."
-                : "Compose a wallet-aware schema, reorder fields, preview it, and export the exact JSON that gets stored on Walrus."}
+                ? "Template loaded. Adjust the fields, preview it, and deploy the form on-chain."
+                : "Compose a wallet-aware schema, reorder fields, preview it, and deploy the form on-chain."}
             </p>
           </div>
           <div className="flex flex-col gap-2 sm:flex-row">
-            <Button onClick={exportSchema} type="button" variant="accent">
-              <Icon aria-hidden icon="solar:diskette-linear" />
-              Export schema
+            <Button
+              onClick={deployForm}
+              type="button"
+              variant="accent"
+              disabled={deployState === "signing"}
+            >
+              <Icon
+                aria-hidden
+                icon={deployState === "signing" ? "solar:refresh-linear" : "solar:rocket-2-linear"}
+                className={deployState === "signing" ? "animate-spin" : ""}
+              />
+              {deployState === "signing" ? "Signing…" : "Deploy form"}
+            </Button>
+            <Button onClick={exportSchema} type="button" variant="outline">
+              <Icon aria-hidden icon="solar:code-square-linear" />
+              Export JSON
             </Button>
             <Button asChild type="button" variant="outline">
               <a href="/f/demo/">
@@ -158,6 +264,74 @@ export function WalformBuilder({ templateSchema = null }: WalformBuilderProps) {
             </Button>
           </div>
         </section>
+
+        {/* Deploy success */}
+        {deployState === "success" && deployedFormId && (
+          <section className="mb-6 rounded-[var(--radius-card)] border border-[var(--color-primary)]/30 bg-[var(--color-tint-mint)] p-5">
+            <div className="flex items-start gap-3">
+              <span className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-full bg-[var(--color-primary)] text-white">
+                <Icon icon="solar:check-circle-bold" width={18} height={18} />
+              </span>
+              <div className="min-w-0 flex-1">
+                <h2 className="text-sm font-bold text-[var(--color-ink)]">
+                  Form deployed on-chain
+                </h2>
+                <p className="mt-1 text-xs text-[var(--color-slate)]">
+                  Your form is now a Sui object. Share the form ID or open it directly.
+                </p>
+                <div className="mt-3 flex flex-wrap items-center gap-2">
+                  <code className="rounded-[var(--radius-button)] bg-[var(--color-card)] px-3 py-1.5 font-mono text-xs text-[var(--color-primary-deep)]">
+                    {deployedFormId}
+                  </code>
+                  <button
+                    className="flex size-8 items-center justify-center rounded-[var(--radius-button)] border border-[var(--color-hairline-soft)] bg-[var(--color-card)] text-[var(--color-slate)] transition-colors hover:text-[var(--color-primary)]"
+                    onClick={() => copyText(deployedFormId)}
+                    type="button"
+                    title="Copy form ID"
+                  >
+                    <Icon
+                      icon={copied ? "solar:check-circle-linear" : "solar:copy-linear"}
+                      width={16}
+                      height={16}
+                    />
+                  </button>
+                </div>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <a
+                    className="inline-flex h-9 items-center gap-1.5 rounded-[var(--radius-button)] border border-[var(--color-hairline-soft)] bg-[var(--color-card)] px-3 text-xs font-semibold text-[var(--color-charcoal)] transition-colors hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]"
+                    href={`${explorerBase}/object/${deployedFormId}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    <Icon icon="solar:graph-up-linear" width={14} height={14} />
+                    View on Suiscan
+                  </a>
+                  <a
+                    className="inline-flex h-9 items-center gap-1.5 rounded-[var(--radius-button)] border border-[var(--color-hairline-soft)] bg-[var(--color-card)] px-3 text-xs font-semibold text-[var(--color-charcoal)] transition-colors hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]"
+                    href={`/admin/${deployedFormId}/`}
+                  >
+                    <Icon icon="solar:shield-user-linear" width={14} height={14} />
+                    Open admin
+                  </a>
+                </div>
+              </div>
+            </div>
+          </section>
+        )}
+
+        {/* Deploy error */}
+        {deployState === "error" && deployError && (
+          <div className="mb-6 rounded-[var(--radius-button)] border border-[var(--color-error)]/20 bg-[var(--color-error)]/5 p-4 text-sm text-[var(--color-error)] dark:border-[var(--color-error)]/40 dark:bg-[var(--color-error)]/10">
+            {deployError}
+          </div>
+        )}
+
+        {/* Schema validation error */}
+        {saveError && (
+          <div className="mb-6 rounded-[var(--radius-button)] border border-[var(--color-error)]/20 bg-[var(--color-error)]/5 p-4 text-sm text-[var(--color-error)] dark:border-[var(--color-error)]/40 dark:bg-[var(--color-error)]/10">
+            {saveError}
+          </div>
+        )}
 
         <section className="mb-6 grid gap-4 rounded-[var(--radius-card)] border border-[var(--color-hairline-soft)] bg-[var(--color-card)] p-5 shadow-[var(--shadow-card)] md:grid-cols-2 lg:grid-cols-4">
           <label className="grid gap-2 lg:col-span-2">
@@ -191,19 +365,10 @@ export function WalformBuilder({ templateSchema = null }: WalformBuilderProps) {
           <PolicyPicker value={policyConfig} onChange={setPolicyConfig} />
         </section>
 
-        {/*
-          Layout:
-            < lg  — single column stack (palette → list/preview → inspector)
-            lg    — 2-col: [1fr 320px]. Left = palette+list+preview. Right = sticky inspector.
-            xl    — 3-col: [280px 1fr 360px]. Palette | list/preview | inspector.
-        */}
         <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_320px] lg:items-start xl:grid-cols-[280px_minmax(0,1fr)_360px]">
-          {/* FieldPalette — own column at xl; stacks inside left col at lg */}
           <FieldPalette onAddField={addField} />
 
-          {/* Center content — tab toggle between Fields and Preview */}
           <div className="grid gap-5 lg:order-first xl:order-none">
-            {/* Tab bar */}
             <div className="flex rounded-[var(--radius-card)] border border-[var(--color-hairline-soft)] bg-[var(--color-card)] p-1 shadow-[var(--shadow-card)]">
               <button
                 className={`flex-1 rounded-[var(--radius-button)] px-4 py-2.5 text-sm font-semibold transition-colors ${
@@ -252,7 +417,6 @@ export function WalformBuilder({ templateSchema = null }: WalformBuilderProps) {
               />
             ) : (
               <div>
-                {/* Preview size toggle */}
                 <div className="mb-4 flex items-center justify-between">
                   <div className="flex gap-2">
                     {(["desktop", "mobile"] as const).map((mode) => (
@@ -282,7 +446,6 @@ export function WalformBuilder({ templateSchema = null }: WalformBuilderProps) {
             )}
           </div>
 
-          {/* Inspector — sticky right rail on lg+, full-width on mobile */}
           <div className="grid content-start gap-5 lg:sticky lg:top-24 lg:row-span-2 xl:row-span-1">
             {selectedField ? (
               <FieldEditor
@@ -294,13 +457,8 @@ export function WalformBuilder({ templateSchema = null }: WalformBuilderProps) {
           </div>
         </div>
 
-        {saveError ? (
-          <div className="mt-6 rounded-[var(--radius-button)] border border-[var(--color-error)]/20 bg-[var(--color-error)]/5 p-4 text-sm text-[var(--color-error)] dark:border-[var(--color-error)]/40 dark:bg-[var(--color-error)]/10">
-            {saveError}
-          </div>
-        ) : null}
-
-        {savedJson ? (
+        {/* Exported JSON */}
+        {savedJson && (
           <section className="mt-6 rounded-[var(--radius-card)] border border-[var(--color-hairline-soft)] bg-[#10201E] p-4 shadow-[var(--shadow-card)]">
             <div className="mb-3 flex items-center justify-between">
               <h2 className="text-lg font-bold text-white">Schema JSON</h2>
@@ -310,7 +468,7 @@ export function WalformBuilder({ templateSchema = null }: WalformBuilderProps) {
                 </span>
                 <button
                   className="flex h-8 items-center gap-1.5 rounded-[var(--radius-button)] border border-white/10 bg-white/5 px-3 text-xs font-semibold text-white transition-colors hover:bg-white/10"
-                  onClick={copyJson}
+                  onClick={() => copyText(savedJson)}
                   type="button"
                 >
                   <Icon
@@ -326,7 +484,7 @@ export function WalformBuilder({ templateSchema = null }: WalformBuilderProps) {
               {savedJson}
             </pre>
           </section>
-        ) : null}
+        )}
       </div>
     </main>
   )

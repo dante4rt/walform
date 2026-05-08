@@ -123,6 +123,30 @@ export function getConfiguredSuiChain(): "sui:testnet" | "sui:mainnet" {
   return process.env.NEXT_PUBLIC_SUI_NETWORK === "mainnet" ? "sui:mainnet" : "sui:testnet"
 }
 
+export function createFormTransaction(packageId: string, schemaBlobId: string) {
+  const tx = new Transaction()
+  tx.setGasBudget(20_000_000)
+  tx.moveCall({
+    target: `${packageId}::form::create_form`,
+    arguments: [tx.pure.vector("u8", bytes(schemaBlobId)), tx.pure.u64(1)],
+  })
+  return tx
+}
+
+export function extractCreatedObjectId(
+  result: {
+    objectChanges?: Array<{ type: string; objectType?: string; objectId?: string }> | null
+  },
+  typeSuffix: string,
+): string | null {
+  for (const change of result.objectChanges ?? []) {
+    if (change.type === "created" && change.objectType?.endsWith(typeSuffix) && change.objectId) {
+      return change.objectId
+    }
+  }
+  return null
+}
+
 function bytes(value: string): number[] {
   return Array.from(new TextEncoder().encode(value))
 }

@@ -21,16 +21,22 @@ export function FormWithPreview({ formId, fallbackSchema }: FormWithPreviewProps
 
   useEffect(() => {
     try {
-      const stored = localStorage.getItem("walform:builder-preview")
-      if (stored) {
-        const parsed = walformSchema.parse(JSON.parse(stored))
-        setSchema(parsed)
+      // 1. Check for a schema stored specifically for this form ID (from deploy).
+      const byId = localStorage.getItem(`walform:schema:${formId}`)
+      if (byId) {
+        setSchema(walformSchema.parse(JSON.parse(byId)))
+        return
+      }
+      // 2. Check for a one-shot builder preview (from Export JSON).
+      const preview = localStorage.getItem("walform:builder-preview")
+      if (preview) {
+        setSchema(walformSchema.parse(JSON.parse(preview)))
         localStorage.removeItem("walform:builder-preview")
       }
     } catch {
       // Invalid JSON or schema — fall back to demo.
     }
-  }, [])
+  }, [formId])
 
   return <PublicForm formId={formId} schema={schema} />
 }

@@ -707,11 +707,16 @@ body {
 /* ─── Interactive Transitions ─── */
 button,
 a {
+  cursor: pointer;
   transition:
     transform 140ms ease-in,
     background-color 200ms ease-out,
     border-color 200ms ease-out,
     color 200ms ease-out;
+}
+
+button:disabled {
+  cursor: not-allowed;
 }
 
 button:active,
