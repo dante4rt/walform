@@ -47,7 +47,7 @@ export async function submitFormResponse(input: SubmitFormInput): Promise<Stored
 }
 
 export async function prepareFormResponse(input: SubmitFormInput): Promise<PreparedSubmission> {
-  const response = walformResponseSchema.parse({
+  const responseData = {
     form_id: input.formId,
     submitted_at_ms: Date.now(),
     submitter: input.submissionMode === "wallet" ? input.submitter : null,
@@ -56,7 +56,24 @@ export async function prepareFormResponse(input: SubmitFormInput): Promise<Prepa
     client_meta: {
       submission_mode: input.submissionMode,
     },
+  }
+  console.log("[Walform] Response data:", JSON.stringify(responseData, null, 2))
+  console.log("[Walform] Response data types:", {
+    form_id: typeof responseData.form_id,
+    submitted_at_ms: typeof responseData.submitted_at_ms,
+    submitter: typeof responseData.submitter,
+    answers: typeof responseData.answers,
+    answersKeys: Object.keys(responseData.answers),
+    severity: typeof responseData.severity,
+    client_meta: typeof responseData.client_meta,
   })
+  let response
+  try {
+    response = walformResponseSchema.parse(responseData)
+  } catch (error) {
+    console.error("[Walform] walformResponseSchema.parse FAILED:", error)
+    throw error
+  }
   const payload = encodeJson(response)
   const encrypted = await encryptPayload(input.formId, payload)
   const blobId = createBlobId(input.formId, response.submitted_at_ms)
