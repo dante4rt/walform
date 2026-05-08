@@ -1,3 +1,4 @@
+import { NETWORK_PACKAGE_IDS } from "./constants"
 import type { PolicyType } from "./types"
 
 export const POLICY_LABELS: Record<PolicyType, string> = {
@@ -7,9 +8,11 @@ export const POLICY_LABELS: Record<PolicyType, string> = {
   time_locked: "Time locked",
 }
 
+const PKG = NETWORK_PACKAGE_IDS.testnet.walform
+
 export const DEFAULT_POLICY_MODULES: Record<PolicyType, string> = {
-  open: "0x0::policy_open::seal_approve",
-  token_gated: "0x0::policy_token_gated::seal_approve",
-  allowlist: "0x0::policy_allowlist::seal_approve",
-  time_locked: "0x0::policy_time_locked::seal_approve",
+  open: `${PKG}::policy_open::seal_approve`,
+  token_gated: `${PKG}::policy_token_gated::seal_approve`,
+  allowlist: `${PKG}::policy_allowlist::seal_approve`,
+  time_locked: `${PKG}::policy_time_locked::seal_approve`,
 }

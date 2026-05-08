@@ -103,9 +103,16 @@ export function WalformBuilder({ templateSchema = null }: WalformBuilderProps) {
   function exportSchema() {
     try {
       const schema = buildWalformSchema({ ...formValues, policyType: policyConfig.type }, fields)
-      const json = JSON.stringify({ ...schema, policy: policyConfig }, null, 2)
+      const fullSchema = { ...schema, policy: policyConfig }
+      const json = JSON.stringify(fullSchema, null, 2)
       setSavedJson(json)
       setSaveError("")
+      // Persist for the form page to pick up as a live preview.
+      try {
+        localStorage.setItem("walform:builder-preview", JSON.stringify(fullSchema))
+      } catch {
+        // localStorage full or unavailable — not critical.
+      }
     } catch (error) {
       setSavedJson("")
       setSaveError(error instanceof Error ? error.message : "Schema validation failed.")

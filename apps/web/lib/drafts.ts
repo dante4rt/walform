@@ -77,7 +77,14 @@ export async function loadDraft(formId: string): Promise<DraftRecord | null> {
     })
 
     if (!encrypted) return null
-    return await decryptDraft(encrypted)
+
+    try {
+      return await decryptDraft(encrypted)
+    } catch {
+      // Session key lost (tab closed) — draft is undecryptable. Purge it.
+      await deleteDraft(formId)
+      return null
+    }
   } catch (error) {
     console.warn("[Walform] Draft load failed:", error)
     return null
