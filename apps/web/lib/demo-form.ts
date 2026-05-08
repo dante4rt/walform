@@ -77,6 +77,6 @@ export const DEMO_FORM_SCHEMA = walformSchema.parse({
   submission_mode: "wallet",
 } satisfies WalformSchema)
 
-export function getDemoFormSchema(_formId: string): WalformSchema {
+export function getDemoFormSchema(): WalformSchema {
   return DEMO_FORM_SCHEMA
 }

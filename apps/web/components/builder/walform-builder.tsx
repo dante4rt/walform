@@ -3,6 +3,7 @@
 import { Icon } from "@iconify/react"
 import { useCurrentAccount, useSignAndExecuteTransaction, useSuiClient } from "@mysten/dapp-kit"
 import type { FieldType, PolicyConfig, WalformSchema } from "@walform/shared"
+import Link from "next/link"
 import { useMemo, useState } from "react"
 import { useForm, useWatch } from "react-hook-form"
 
@@ -257,10 +258,10 @@ export function WalformBuilder({ templateSchema = null }: WalformBuilderProps) {
               Export JSON
             </Button>
             <Button asChild type="button" variant="outline">
-              <a href="/f/demo/">
+              <Link href="/f/demo/">
                 <Icon aria-hidden icon="solar:eye-linear" />
                 Preview form
-              </a>
+              </Link>
             </Button>
           </div>
         </section>

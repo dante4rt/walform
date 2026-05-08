@@ -17,7 +17,7 @@ export function generateStaticParams() {
 
 export default async function FormPage({ params }: FormPageProps) {
   const { formId } = await params
-  const schema = getDemoFormSchema(formId)
+  const schema = getDemoFormSchema()
 
   return <FormWithPreview formId={formId} fallbackSchema={schema} />
 }
