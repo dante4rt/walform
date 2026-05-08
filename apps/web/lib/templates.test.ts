@@ -21,18 +21,15 @@ describe("templates lib", () => {
     }
   })
 
-  it("creates builder links with a slug and encoded schema payload", () => {
+  it("creates builder links with a template slug", () => {
     const template = getTemplateBySlug("bug-report")
 
     expect(template).toBeDefined()
 
     const href = createTemplateBuilderHref(template!)
     const url = new URL(href, "https://walform.local")
-    const encodedSchema = url.searchParams.get("templateSchema")
 
     expect(url.pathname).toBe("/builder/")
     expect(url.searchParams.get("template")).toBe("bug-report")
-    expect(encodedSchema).toBeTruthy()
-    expect(JSON.parse(encodedSchema!)).toEqual(template!.schema)
   })
 })

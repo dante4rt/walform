@@ -289,7 +289,5 @@ export function getTemplateBySlug(slug: string): WalformTemplate | undefined {
 }
 
 export function createTemplateBuilderHref(template: WalformTemplate): string {
-  const encodedSchema = encodeURIComponent(JSON.stringify(template.schema))
-
-  return `/builder/?template=${encodeURIComponent(template.slug)}&templateSchema=${encodedSchema}`
+  return `/builder/?template=${encodeURIComponent(template.slug)}`
 }

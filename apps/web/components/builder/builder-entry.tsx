@@ -2,13 +2,14 @@
 
 import { useSearchParams } from "next/navigation"
 
-import { parseTemplateSchema } from "./builder-schema"
+import { getTemplateBySlug } from "@/lib/templates"
+
 import { WalformBuilder } from "./walform-builder"
 
 export function BuilderEntry() {
   const searchParams = useSearchParams()
-  const encodedSchema = searchParams.get("templateSchema")
-  const templateSchema = parseTemplateSchema(encodedSchema ?? undefined)
+  const slug = searchParams.get("template")
+  const templateSchema = slug ? (getTemplateBySlug(slug)?.schema ?? null) : null
 
-  return <WalformBuilder key={encodedSchema ?? "blank"} templateSchema={templateSchema} />
+  return <WalformBuilder key={slug ?? "blank"} templateSchema={templateSchema} />
 }
