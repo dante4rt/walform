@@ -2,7 +2,7 @@
 
 import type { WalformSchema } from "@walform/shared"
 import { walformSchema } from "@walform/shared"
-import { useState } from "react"
+import { useMemo, useSyncExternalStore } from "react"
 
 import { PublicForm } from "@/components/form/public-form"
 
@@ -11,22 +11,28 @@ interface FormWithPreviewProps {
   fallbackSchema: WalformSchema
 }
 
-function loadSchemaFromStorage(formId: string, fallback: WalformSchema): WalformSchema {
-  if (typeof window === "undefined") return fallback
+function getStoredSchemaJson(formId: string): string | null {
+  if (typeof window === "undefined") return null
+
+  return (
+    localStorage.getItem(`walform:schema:${formId}`) ??
+    localStorage.getItem("walform:builder-preview")
+  )
+}
+
+function parseStoredSchema(value: string | null): WalformSchema | null {
+  if (!value) return null
+
   try {
-    // 1. Check for a schema stored specifically for this form ID (from deploy).
-    const byId = localStorage.getItem(`walform:schema:${formId}`)
-    if (byId) return walformSchema.parse(JSON.parse(byId))
-    // 2. Check for a one-shot builder preview (from Export JSON).
-    const preview = localStorage.getItem("walform:builder-preview")
-    if (preview) {
-      localStorage.removeItem("walform:builder-preview")
-      return walformSchema.parse(JSON.parse(preview))
-    }
+    return walformSchema.parse(JSON.parse(value))
   } catch {
-    // Invalid JSON or schema — fall back to demo.
+    return null
   }
-  return fallback
+}
+
+function subscribeToStoredSchema(onStoreChange: () => void) {
+  window.addEventListener("storage", onStoreChange)
+  return () => window.removeEventListener("storage", onStoreChange)
 }
 
 /**
@@ -34,7 +40,15 @@ function loadSchemaFromStorage(formId: string, fallback: WalformSchema): Walform
  * If found, uses it instead of the fallback (demo) schema.
  */
 export function FormWithPreview({ formId, fallbackSchema }: FormWithPreviewProps) {
-  const [schema] = useState(() => loadSchemaFromStorage(formId, fallbackSchema))
+  const storedSchemaJson = useSyncExternalStore(
+    subscribeToStoredSchema,
+    () => getStoredSchemaJson(formId),
+    () => null,
+  )
+  const schema = useMemo(
+    () => parseStoredSchema(storedSchemaJson) ?? fallbackSchema,
+    [fallbackSchema, storedSchemaJson],
+  )
 
   return <PublicForm formId={formId} schema={schema} />
 }

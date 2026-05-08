@@ -42,6 +42,10 @@ export async function loadAdminRecords(formId: string): Promise<AdminResponseRec
     })),
   )
 
+  if (!usesDemoResponses(formId)) {
+    return localRecords
+  }
+
   const demoRecords = await Promise.all(
     (await demoAdminAdapter.listResponseRefs(formId)).map(async (ref) => {
       const [ciphertext, note] = await Promise.all([
@@ -202,4 +206,9 @@ function createDemoRecord(
       },
     },
   }
+}
+
+function usesDemoResponses(formId: string): boolean {
+  const demoFormId = process.env.NEXT_PUBLIC_WALFORM_DEMO_FORM_ID
+  return formId === "demo" || formId === "walrus-sessions-feedback" || formId === demoFormId
 }

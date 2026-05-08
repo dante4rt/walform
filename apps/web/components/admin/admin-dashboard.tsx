@@ -359,7 +359,9 @@ export function AdminDashboard({ formId }: AdminDashboardProps) {
                   <div>
                     <h2 className="text-base font-semibold text-[var(--color-ink)]">Responses</h2>
                     <p className="mt-0.5 text-xs text-[var(--color-slate)]">
-                      Latest {formatDate(metrics.latestTimestamp)} from Sui refs and Walrus blobs
+                      {metrics.latestTimestamp
+                        ? `Latest ${formatDate(metrics.latestTimestamp)} from Sui refs and Walrus blobs`
+                        : "No submissions have been indexed for this form yet"}
                     </p>
                   </div>
                   <div className="flex flex-wrap gap-2 sm:gap-3">
@@ -409,11 +411,12 @@ export function AdminDashboard({ formId }: AdminDashboardProps) {
                       />
                     </div>
                     <h3 className="mt-4 text-sm font-semibold text-[var(--color-ink)]">
-                      No matching responses
+                      {records.length === 0 ? "No responses yet" : "No matching responses"}
                     </h3>
                     <p className="mt-1 max-w-xs text-xs leading-relaxed text-[var(--color-slate)]">
-                      No responses match the current severity, status, and date filters. Try
-                      broadening your criteria.
+                      {records.length === 0
+                        ? "Submit the public form once, then refresh this dashboard to inspect the encrypted response record."
+                        : "No responses match the current severity, status, and date filters. Try broadening your criteria."}
                     </p>
                   </div>
                 ) : (

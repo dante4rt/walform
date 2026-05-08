@@ -28,26 +28,12 @@ export function CostBadge({ responseCount, epochs = EPOCHS_DEFAULT, className }:
       : ""
 
   return (
-    <>
-      <style>{`
-        @keyframes cost-badge-fade-in {
-          from { opacity: 0; transform: translateY(4px); }
-          to   { opacity: 1; transform: translateY(0); }
-        }
-        .cost-badge {
-          animation: cost-badge-fade-in 300ms ease-out both;
-        }
-        @media (prefers-reduced-motion: reduce) {
-          .cost-badge { animation: none; }
-        }
-      `}</style>
-      <span
-        className={`cost-badge inline-flex items-center gap-1 rounded-full bg-[var(--color-primary)] px-2 py-0.5 text-xs font-semibold text-[var(--color-on-primary)] ${className ?? ""}`}
-      >
-        <span>
-          ~{perThousand} / 1k responses · {epochs} epochs{actualLabel}
-        </span>
+    <span
+      className={`cost-badge inline-flex items-center gap-1 rounded-full bg-[var(--color-primary)] px-2 py-0.5 text-xs font-semibold text-[var(--color-on-primary)] ${className ?? ""}`}
+    >
+      <span>
+        ~{perThousand} / 1k responses · {epochs} epochs{actualLabel}
       </span>
-    </>
+    </span>
   )
 }

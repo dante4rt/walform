@@ -61,7 +61,7 @@ export function Navbar() {
             })}
             {account && (
               <Link
-                href={`/admin/demo`}
+                href="/admin/?formId=demo"
                 className={`rounded-[var(--radius-button)] px-3 py-1.5 text-sm font-medium transition-colors ${
                   pathname.startsWith("/admin")
                     ? "bg-[var(--color-tint-mint)] text-[var(--color-primary)]"
@@ -156,7 +156,7 @@ export function Navbar() {
             })}
             {account && (
               <Link
-                href="/admin/demo"
+                href="/admin/?formId=demo"
                 onClick={() => setMobileOpen(false)}
                 className="rounded-[var(--radius-button)] px-3 py-2 text-sm font-medium text-[var(--color-slate)] hover:text-[var(--color-charcoal)]"
               >

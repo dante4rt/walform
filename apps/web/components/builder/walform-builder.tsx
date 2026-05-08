@@ -299,6 +299,13 @@ export function WalformBuilder({ templateSchema = null }: WalformBuilderProps) {
                 </div>
                 <div className="mt-3 flex flex-wrap gap-2">
                   <a
+                    className="inline-flex h-9 items-center gap-1.5 rounded-[var(--radius-button)] bg-[var(--color-primary)] px-3 text-xs font-semibold text-[var(--color-on-primary)] transition-colors hover:bg-[var(--color-primary-deep)]"
+                    href={`/f/?formId=${encodeURIComponent(deployedFormId)}`}
+                  >
+                    <Icon icon="solar:eye-linear" width={14} height={14} />
+                    Open public form
+                  </a>
+                  <a
                     className="inline-flex h-9 items-center gap-1.5 rounded-[var(--radius-button)] border border-[var(--color-hairline-soft)] bg-[var(--color-card)] px-3 text-xs font-semibold text-[var(--color-charcoal)] transition-colors hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]"
                     href={`${explorerBase}/object/${deployedFormId}`}
                     target="_blank"
@@ -309,7 +316,7 @@ export function WalformBuilder({ templateSchema = null }: WalformBuilderProps) {
                   </a>
                   <a
                     className="inline-flex h-9 items-center gap-1.5 rounded-[var(--radius-button)] border border-[var(--color-hairline-soft)] bg-[var(--color-card)] px-3 text-xs font-semibold text-[var(--color-charcoal)] transition-colors hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]"
-                    href={`/admin/${deployedFormId}/`}
+                    href={`/admin/?formId=${encodeURIComponent(deployedFormId)}`}
                   >
                     <Icon icon="solar:shield-user-linear" width={14} height={14} />
                     Open admin

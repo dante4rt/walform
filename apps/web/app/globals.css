@@ -179,6 +179,22 @@ body {
   font-family: var(--font-plus-jakarta), system-ui, sans-serif;
 }
 
+@keyframes cost-badge-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.cost-badge {
+  animation: cost-badge-fade-in 300ms ease-out both;
+}
+
 /* ─── Landing utilities ─── */
 .landing-bg {
   position: relative;
@@ -517,8 +533,10 @@ body {
 
 @media (prefers-reduced-motion: reduce) {
   .btn-primary,
-  .btn-secondary {
+  .btn-secondary,
+  .cost-badge {
     transition: none !important;
+    animation: none !important;
   }
 }
 

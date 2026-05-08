@@ -129,7 +129,9 @@ export function PublicForm({ formId, schema }: PublicFormProps) {
       const packageId = getConfiguredPackageId()
       let stored = prepared.stored
 
-      if (packageId && currentAccount) {
+      const canSubmitOnChain = Boolean(packageId && currentAccount && isSuiObjectId(formId))
+
+      if (canSubmitOnChain && packageId && currentAccount) {
         const tx = createSubmitResponseTransaction({
           packageId,
           formId,
@@ -151,7 +153,7 @@ export function PublicForm({ formId, schema }: PublicFormProps) {
             digest: result.digest,
           },
         }
-      } else if (packageId && !currentAccount) {
+      } else if (packageId && !currentAccount && isSuiObjectId(formId)) {
         throw new Error("Connect a Sui wallet on testnet before submitting on-chain.")
       }
 
@@ -286,7 +288,7 @@ export function PublicForm({ formId, schema }: PublicFormProps) {
               {status === "submitting" ? "Encrypting..." : "Submit response"}
             </Button>
             <Button asChild variant="outline">
-              <Link href={`/admin/${formId}/`}>
+              <Link href={`/admin/?formId=${encodeURIComponent(formId)}`}>
                 <Icon aria-hidden icon="solar:chart-square-linear" />
                 Open admin
               </Link>
@@ -542,4 +544,8 @@ function getOptions(field: FormField): string[] {
 
 function getMaxRating(field: FormField): number {
   return "max" in field ? (field as StarRatingField).max : 5
+}
+
+function isSuiObjectId(value: string): boolean {
+  return /^0x[a-fA-F0-9]{64}$/.test(value)
 }
