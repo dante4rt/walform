@@ -101,7 +101,7 @@ export default function TemplatesPage() {
             if (isLast) {
               return (
                 <article
-                  className="group sm:col-span-2 rounded-[var(--radius-card)] border border-[var(--color-hairline-soft)] bg-[var(--color-card)] p-4 shadow-[var(--shadow-card)] sm:p-5"
+                  className="group overflow-hidden sm:col-span-2 rounded-[var(--radius-card)] border border-[var(--color-hairline-soft)] bg-[var(--color-card)] p-4 shadow-[var(--shadow-card)] sm:p-5"
                   key={template.slug}
                 >
                   <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:gap-6">
@@ -133,17 +133,17 @@ export default function TemplatesPage() {
                         <span>Mode: {template.schema.submission_mode.replace("_", " ")}</span>
                       </div>
                       <Link
-                        className="mt-4 inline-flex h-11 items-center justify-center rounded-[var(--radius-button)] bg-[var(--color-primary)] px-5 text-sm font-semibold text-[var(--color-on-primary)] hover:bg-[var(--color-primary-pressed)]"
+                        className="mt-4 inline-flex h-11 w-full items-center justify-center rounded-[var(--radius-button)] bg-[var(--color-primary)] px-5 text-sm font-semibold text-[var(--color-on-primary)] hover:bg-[var(--color-primary-pressed)] sm:w-auto"
                         href={createTemplateBuilderHref(template)}
                       >
                         Use template
                       </Link>
                     </div>
 
-                    <div className="grid w-full shrink-0 grid-cols-2 gap-2 sm:w-64">
+                    <div className="grid w-full shrink-0 grid-cols-1 gap-2 sm:w-64 sm:grid-cols-2">
                       {template.schema.fields.slice(0, 4).map((field) => (
                         <div
-                          className="rounded-[var(--radius-button)] border border-[var(--color-hairline-soft)] bg-[var(--color-canvas)] p-3"
+                          className="overflow-hidden rounded-[var(--radius-button)] border border-[var(--color-hairline-soft)] bg-[var(--color-canvas)] p-3"
                           key={field.id}
                         >
                           <p className="truncate text-xs font-semibold text-[var(--color-ink)]">
@@ -162,7 +162,7 @@ export default function TemplatesPage() {
 
             return (
               <article
-                className="group rounded-[var(--radius-card)] border border-[var(--color-hairline-soft)] bg-[var(--color-card)] p-4 shadow-[var(--shadow-card)] sm:p-5"
+                className="group overflow-hidden rounded-[var(--radius-card)] border border-[var(--color-hairline-soft)] bg-[var(--color-card)] p-4 shadow-[var(--shadow-card)] sm:p-5"
                 key={template.slug}
               >
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
@@ -186,7 +186,7 @@ export default function TemplatesPage() {
                   </div>
 
                   <Link
-                    className="inline-flex h-10 shrink-0 items-center justify-center rounded-[var(--radius-button)] bg-[var(--color-primary)] px-4 text-sm font-semibold text-[var(--color-on-primary)] hover:bg-[var(--color-primary-pressed)]"
+                    className="inline-flex h-10 w-full items-center justify-center rounded-[var(--radius-button)] bg-[var(--color-primary)] px-4 text-sm font-semibold text-[var(--color-on-primary)] hover:bg-[var(--color-primary-pressed)] sm:w-auto sm:shrink-0"
                     href={createTemplateBuilderHref(template)}
                   >
                     Use template
@@ -196,17 +196,15 @@ export default function TemplatesPage() {
                 <div className="mt-3 grid gap-2 sm:mt-4 sm:grid-cols-2">
                   {template.schema.fields.slice(0, 2).map((field) => (
                     <div
-                      className="rounded-[var(--radius-button)] border border-[var(--color-hairline-soft)] bg-[var(--color-canvas)] p-3"
+                      className="overflow-hidden rounded-[var(--radius-button)] border border-[var(--color-hairline-soft)] bg-[var(--color-canvas)] p-3"
                       key={field.id}
                     >
-                      <div className="flex items-center justify-between gap-2">
-                        <p className="min-w-0 truncate text-sm font-semibold text-[var(--color-ink)]">
-                          {field.label}
-                        </p>
-                        <span className="shrink-0 rounded-[var(--radius-pill)] bg-[var(--color-card)] px-2 py-1 font-mono text-[10px] text-[var(--color-slate)]">
-                          {field.type.replace("_", " ")}
-                        </span>
-                      </div>
+                      <p className="truncate text-xs font-semibold text-[var(--color-ink)]">
+                        {field.label}
+                      </p>
+                      <span className="mt-1 inline-block rounded-[var(--radius-pill)] bg-[var(--color-card)] px-1.5 py-0.5 font-mono text-[9px] text-[var(--color-slate)]">
+                        {field.type.replace("_", " ")}
+                      </span>
                     </div>
                   ))}
                 </div>
