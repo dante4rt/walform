@@ -4,7 +4,6 @@ import {
   buildWalformSchema,
   createBuilderField,
   createInitialFields,
-  createSharePath,
   DEFAULT_BUILDER_VALUES,
   getNextFieldIndex,
   moveField,
@@ -61,6 +60,5 @@ describe("builder schema helpers", () => {
       type: "dropdown",
       options: ["Discord", "X", "Friend", "Other"],
     })
-    expect(createSharePath(schema)).toBe("/f/walrus-sessions-feedback")
   })
 })

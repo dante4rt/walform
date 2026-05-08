@@ -190,16 +190,6 @@ export function buildWalformSchema(
   return walformSchema.parse(schema)
 }
 
-export function createSharePath(schema: WalformSchema): string {
-  const slug = schema.title
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-|-$/g, "")
-    .slice(0, 42)
-
-  return `/f/${slug || "draft"}`
-}
-
 export function parseTemplateSchema(value: string | string[] | undefined): WalformSchema | null {
   if (typeof value !== "string" || !value) {
     return null

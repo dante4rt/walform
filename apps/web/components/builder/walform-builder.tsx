@@ -5,7 +5,6 @@ import type { FieldType, PolicyConfig, WalformSchema } from "@walform/shared"
 import { useMemo, useState } from "react"
 import { useForm, useWatch } from "react-hook-form"
 
-import { CostBadge } from "@/components/CostBadge"
 import { Button } from "@/components/ui/button"
 
 import {
@@ -14,7 +13,6 @@ import {
   createBuilderField,
   createBuilderValuesFromSchema,
   createInitialFields,
-  createSharePath,
   DEFAULT_BUILDER_VALUES,
   getNextFieldIndex,
   moveField,
@@ -52,6 +50,8 @@ export function WalformBuilder({ templateSchema = null }: WalformBuilderProps) {
   }))
   const [savedJson, setSavedJson] = useState("")
   const [saveError, setSaveError] = useState("")
+  const [copied, setCopied] = useState(false)
+  const [centerTab, setCenterTab] = useState<"fields" | "preview">("fields")
 
   const formValues = useMemo<BuilderFormValues>(
     () => ({ ...defaultValues, ...values }),
@@ -66,7 +66,6 @@ export function WalformBuilder({ templateSchema = null }: WalformBuilderProps) {
       return null
     }
   }, [fields, formValues, policyConfig])
-  const sharePath = draftSchema ? createSharePath(draftSchema) : "/f/draft"
 
   function addField(type: FieldType) {
     const nextField = createBuilderField(type, getNextFieldIndex(fields))
@@ -101,14 +100,26 @@ export function WalformBuilder({ templateSchema = null }: WalformBuilderProps) {
     setDraggedFieldId(null)
   }
 
-  function saveSchema() {
+  function exportSchema() {
     try {
       const schema = buildWalformSchema({ ...formValues, policyType: policyConfig.type }, fields)
-      setSavedJson(JSON.stringify({ ...schema, policy: policyConfig }, null, 2))
+      const json = JSON.stringify({ ...schema, policy: policyConfig }, null, 2)
+      setSavedJson(json)
       setSaveError("")
     } catch (error) {
       setSavedJson("")
       setSaveError(error instanceof Error ? error.message : "Schema validation failed.")
+    }
+  }
+
+  async function copyJson() {
+    if (!savedJson) return
+    try {
+      await navigator.clipboard.writeText(savedJson)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    } catch {
+      // Fallback: select the pre content
     }
   }
 
@@ -126,19 +137,16 @@ export function WalformBuilder({ templateSchema = null }: WalformBuilderProps) {
                 ? "Template loaded. Adjust the fields, preview it, and export the exact JSON that gets stored on Walrus."
                 : "Compose a wallet-aware schema, reorder fields, preview it, and export the exact JSON that gets stored on Walrus."}
             </p>
-            <div className="mt-3">
-              <CostBadge responseCount={fields.length} />
-            </div>
           </div>
           <div className="flex flex-col gap-2 sm:flex-row">
-            <Button onClick={saveSchema} type="button" variant="accent">
+            <Button onClick={exportSchema} type="button" variant="accent">
               <Icon aria-hidden icon="solar:diskette-linear" />
-              Save JSON
+              Export schema
             </Button>
             <Button asChild type="button" variant="outline">
-              <a href={sharePath}>
-                <Icon aria-hidden icon="solar:link-linear" />
-                Share draft
+              <a href="/f/demo/">
+                <Icon aria-hidden icon="solar:eye-linear" />
+                Preview form
               </a>
             </Button>
           </div>
@@ -186,22 +194,85 @@ export function WalformBuilder({ templateSchema = null }: WalformBuilderProps) {
           {/* FieldPalette — own column at xl; stacks inside left col at lg */}
           <FieldPalette onAddField={addField} />
 
-          {/* Center content — spans both lg columns minus the inspector at xl */}
+          {/* Center content — tab toggle between Fields and Preview */}
           <div className="grid gap-5 lg:order-first xl:order-none">
-            <FieldList
-              draggedFieldId={draggedFieldId}
-              fields={fields}
-              onDragStart={setDraggedFieldId}
-              onDrop={handleDrop}
-              onSelect={setSelectedFieldId}
-              selectedFieldId={selectedFieldId}
-            />
-            <FormPreview
-              description={formValues.description}
-              fields={fields}
-              mode={previewMode}
-              title={formValues.title}
-            />
+            {/* Tab bar */}
+            <div className="flex rounded-[var(--radius-card)] border border-[var(--color-hairline-soft)] bg-[var(--color-card)] p-1 shadow-[var(--shadow-card)]">
+              <button
+                className={`flex-1 rounded-[var(--radius-button)] px-4 py-2.5 text-sm font-semibold transition-colors ${
+                  centerTab === "fields"
+                    ? "bg-[var(--color-primary)] text-white"
+                    : "text-[var(--color-slate)] hover:text-[var(--color-charcoal)]"
+                }`}
+                onClick={() => setCenterTab("fields")}
+                type="button"
+              >
+                <Icon
+                  icon="solar:list-linear"
+                  className="mr-1.5 inline-block align-[-2px]"
+                  width={16}
+                  height={16}
+                />
+                Fields
+              </button>
+              <button
+                className={`flex-1 rounded-[var(--radius-button)] px-4 py-2.5 text-sm font-semibold transition-colors ${
+                  centerTab === "preview"
+                    ? "bg-[var(--color-primary)] text-white"
+                    : "text-[var(--color-slate)] hover:text-[var(--color-charcoal)]"
+                }`}
+                onClick={() => setCenterTab("preview")}
+                type="button"
+              >
+                <Icon
+                  icon="solar:eye-linear"
+                  className="mr-1.5 inline-block align-[-2px]"
+                  width={16}
+                  height={16}
+                />
+                Preview
+              </button>
+            </div>
+
+            {centerTab === "fields" ? (
+              <FieldList
+                draggedFieldId={draggedFieldId}
+                fields={fields}
+                onDragStart={setDraggedFieldId}
+                onDrop={handleDrop}
+                onSelect={setSelectedFieldId}
+                selectedFieldId={selectedFieldId}
+              />
+            ) : (
+              <div>
+                {/* Preview size toggle */}
+                <div className="mb-4 flex items-center justify-between">
+                  <div className="flex gap-2">
+                    {(["desktop", "mobile"] as const).map((mode) => (
+                      <button
+                        className={`h-9 rounded-[var(--radius-button)] border px-4 text-xs font-semibold transition-colors ${
+                          previewMode === mode
+                            ? "border-[var(--color-primary)] bg-[var(--color-primary)] text-white"
+                            : "border-[var(--color-hairline-soft)] text-[var(--color-ink)]"
+                        }`}
+                        key={mode}
+                        onClick={() => setPreviewMode(mode)}
+                        type="button"
+                      >
+                        {mode}
+                      </button>
+                    ))}
+                  </div>
+                  <span className="font-mono text-xs text-[var(--color-slate)]">/f/demo</span>
+                </div>
+                <FormPreview
+                  description={formValues.description}
+                  fields={fields}
+                  mode={previewMode}
+                  title={formValues.title}
+                />
+              </div>
+            )}
           </div>
 
           {/* Inspector — sticky right rail on lg+, full-width on mobile */}
@@ -213,28 +284,6 @@ export function WalformBuilder({ templateSchema = null }: WalformBuilderProps) {
                 onUpdateField={updateField}
               />
             ) : null}
-            <section className="rounded-[var(--radius-card)] border border-[var(--color-hairline-soft)] bg-[var(--color-card)] p-4 shadow-[var(--shadow-card)]">
-              <div className="mb-3 flex items-center justify-between">
-                <h2 className="text-lg font-bold text-[var(--color-ink)]">Preview size</h2>
-                <span className="font-mono text-xs text-[var(--color-slate)]">{sharePath}</span>
-              </div>
-              <div className="grid grid-cols-2 gap-2">
-                {(["desktop", "mobile"] as const).map((mode) => (
-                  <button
-                    className={`h-10 rounded-[var(--radius-button)] border text-sm font-semibold ${
-                      previewMode === mode
-                        ? "border-[var(--color-primary)] bg-[var(--color-primary)] text-white"
-                        : "border-[var(--color-hairline-soft)] text-[var(--color-ink)]"
-                    }`}
-                    key={mode}
-                    onClick={() => setPreviewMode(mode)}
-                    type="button"
-                  >
-                    {mode}
-                  </button>
-                ))}
-              </div>
-            </section>
           </div>
         </div>
 
@@ -248,9 +297,23 @@ export function WalformBuilder({ templateSchema = null }: WalformBuilderProps) {
           <section className="mt-6 rounded-[var(--radius-card)] border border-[var(--color-hairline-soft)] bg-[#10201E] p-4 shadow-[var(--shadow-card)]">
             <div className="mb-3 flex items-center justify-between">
               <h2 className="text-lg font-bold text-white">Schema JSON</h2>
-              <span className="rounded-[var(--radius-pill)] bg-[var(--color-accent)] px-3 py-1 text-xs font-semibold text-[var(--color-on-accent)]">
-                Valid
-              </span>
+              <div className="flex items-center gap-2">
+                <span className="rounded-[var(--radius-pill)] bg-[var(--color-accent)] px-3 py-1 text-xs font-semibold text-[var(--color-on-accent)]">
+                  Valid
+                </span>
+                <button
+                  className="flex h-8 items-center gap-1.5 rounded-[var(--radius-button)] border border-white/10 bg-white/5 px-3 text-xs font-semibold text-white transition-colors hover:bg-white/10"
+                  onClick={copyJson}
+                  type="button"
+                >
+                  <Icon
+                    icon={copied ? "solar:check-circle-linear" : "solar:copy-linear"}
+                    width={14}
+                    height={14}
+                  />
+                  {copied ? "Copied" : "Copy"}
+                </button>
+              </div>
             </div>
             <pre className="max-h-[520px] overflow-auto rounded-[var(--radius-button)] bg-[#081412] p-4 text-xs leading-5 text-teal-50">
               {savedJson}
