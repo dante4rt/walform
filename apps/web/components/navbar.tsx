@@ -5,6 +5,7 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { useState } from "react"
 
+import Image from "next/image"
 import { ThemeToggle } from "@/components/theme-toggle"
 
 const navLinks = [
@@ -24,8 +25,16 @@ export function Navbar() {
         <div className="flex items-center gap-6">
           <Link
             href="/"
-            className="font-serif text-lg font-normal italic tracking-tight text-[var(--color-ink)] transition-colors hover:text-[var(--color-primary)]"
+            className="flex items-center gap-2 font-serif text-lg font-normal italic tracking-tight text-[var(--color-ink)] transition-colors hover:text-[var(--color-primary)]"
           >
+            <Image
+              src="/logo.png"
+              alt="Walform logo"
+              width={28}
+              height={28}
+              className="h-7 w-7"
+              priority
+            />
             Walform
           </Link>
 
