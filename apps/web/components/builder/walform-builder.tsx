@@ -8,6 +8,7 @@ import { useMemo, useState } from "react"
 import { useForm, useWatch } from "react-hook-form"
 
 import { Button } from "@/components/ui/button"
+import { rememberKnownForm } from "@/lib/form-registry"
 import {
   createFormTransaction,
   extractCreatedObjectId,
@@ -188,6 +189,13 @@ export function WalformBuilder({ templateSchema = null }: WalformBuilderProps) {
       } catch {
         // not critical
       }
+
+      rememberKnownForm({
+        formId: formObjectId,
+        title: fullSchema.title,
+        owner: currentAccount.address,
+        createdAtMs: Date.now(),
+      })
 
       // Also persist for the /f/demo preview.
       try {

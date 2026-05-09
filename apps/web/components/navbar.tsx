@@ -3,7 +3,7 @@
 import { ConnectButton, useCurrentAccount } from "@mysten/dapp-kit"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 
 import Image from "next/image"
 import { ThemeToggle } from "@/components/theme-toggle"
@@ -17,6 +17,27 @@ export function Navbar() {
   const pathname = usePathname()
   const account = useCurrentAccount()
   const [mobileOpen, setMobileOpen] = useState(false)
+  const isPublicFormPath = pathname === "/f" || pathname.startsWith("/f/")
+  const [adminPreviewFormId, setAdminPreviewFormId] = useState<string | null>(null)
+  const adminHref = adminPreviewFormId
+    ? `/admin/?formId=${encodeURIComponent(adminPreviewFormId)}`
+    : "/admin/"
+  const showAdminLink = Boolean(adminPreviewFormId || (account && !isPublicFormPath))
+
+  useEffect(() => {
+    const timeoutId = window.setTimeout(() => {
+      if (!isPublicFormPath) {
+        setAdminPreviewFormId(null)
+        return
+      }
+
+      const params = new URLSearchParams(window.location.search)
+      const nextFormId = params.get("from") === "admin" ? params.get("formId") : null
+      setAdminPreviewFormId(nextFormId?.trim() || null)
+    }, 0)
+
+    return () => window.clearTimeout(timeoutId)
+  }, [isPublicFormPath, pathname])
 
   return (
     <nav className="sticky top-0 z-40 border-b border-[var(--color-hairline-soft)] bg-[var(--color-card)]">
@@ -59,9 +80,9 @@ export function Navbar() {
                 </Link>
               )
             })}
-            {account && (
+            {showAdminLink && (
               <Link
-                href="/admin/?formId=demo"
+                href={adminHref}
                 className={`rounded-[var(--radius-button)] px-3 py-1.5 text-sm font-medium transition-colors ${
                   pathname.startsWith("/admin")
                     ? "bg-[var(--color-tint-mint)] text-[var(--color-primary)]"
@@ -87,14 +108,6 @@ export function Navbar() {
               className="!h-8 !rounded-[var(--radius-button)] !border !border-[var(--color-hairline-soft)] !bg-[var(--color-card)] !px-3 !text-xs !font-medium !text-[var(--color-charcoal)] hover:!bg-[var(--color-canvas)]"
             />
           </div>
-
-          {/* Connected address indicator */}
-          {account && (
-            <span className="hidden items-center gap-1.5 rounded-[var(--radius-button)] border border-[var(--color-hairline-soft)] px-2.5 py-1 font-mono text-[11px] text-[var(--color-slate)] md:flex">
-              <span className="h-1.5 w-1.5 rounded-full bg-[var(--color-success)]" />
-              {account.address.slice(0, 6)}...{account.address.slice(-4)}
-            </span>
-          )}
 
           {/* Mobile hamburger */}
           <button
@@ -154,9 +167,9 @@ export function Navbar() {
                 </Link>
               )
             })}
-            {account && (
+            {showAdminLink && (
               <Link
-                href="/admin/?formId=demo"
+                href={adminHref}
                 onClick={() => setMobileOpen(false)}
                 className="rounded-[var(--radius-button)] px-3 py-2 text-sm font-medium text-[var(--color-slate)] hover:text-[var(--color-charcoal)]"
               >

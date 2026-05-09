@@ -7,6 +7,12 @@ import Link from "next/link"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 
 import { Button } from "@/components/ui/button"
+import {
+  createAttachmentAnswer,
+  formatFileSize,
+  isAttachmentAnswer,
+  type AttachmentAnswer,
+} from "@/lib/attachments"
 import { deleteDraft, loadDraft, saveDraft } from "@/lib/drafts"
 import {
   appendPreparedSubmission,
@@ -24,9 +30,10 @@ import { dispatchWebhook } from "@/lib/webhook"
 interface PublicFormProps {
   formId: string
   schema: WalformSchema
+  adminReturnHref?: string
 }
 
-type AnswerValue = string | string[] | number | boolean | null
+type AnswerValue = string | string[] | number | boolean | AttachmentAnswer | null
 type OptionField = Extract<FormField, { type: "dropdown" | "checkbox_group" }>
 type StarRatingField = Extract<FormField, { type: "star_rating" }>
 
@@ -51,7 +58,7 @@ const severityOptions: Array<{ value: Severity; label: string }> = [
   { value: "critical", label: "Critical" },
 ]
 
-export function PublicForm({ formId, schema }: PublicFormProps) {
+export function PublicForm({ formId, schema, adminReturnHref }: PublicFormProps) {
   const currentAccount = useCurrentAccount()
   const suiClient = useSuiClient()
   const { mutateAsync: signAndExecuteTransaction } = useSignAndExecuteTransaction({
@@ -287,12 +294,14 @@ export function PublicForm({ formId, schema }: PublicFormProps) {
               <Icon aria-hidden icon="solar:shield-check-linear" />
               {status === "submitting" ? "Encrypting..." : "Submit response"}
             </Button>
-            <Button asChild variant="outline">
-              <Link href={`/admin/?formId=${encodeURIComponent(formId)}`}>
-                <Icon aria-hidden icon="solar:chart-square-linear" />
-                Open admin
-              </Link>
-            </Button>
+            {adminReturnHref ? (
+              <Button asChild variant="outline">
+                <Link href={adminReturnHref}>
+                  <Icon aria-hidden icon="solar:shield-user-linear" />
+                  Back to admin
+                </Link>
+              </Button>
+            ) : null}
           </div>
         </section>
 
@@ -463,13 +472,23 @@ function renderInput(
   }
 
   if (field.type === "screenshot" || field.type === "video") {
+    const attachmentFieldType = field.type
+
     return (
-      <input
-        accept={field.type === "screenshot" ? "image/*" : "video/*"}
-        className="rounded-[var(--radius-button)] border border-dashed border-[var(--color-stone)] bg-[var(--color-card)] p-3 text-sm file:mr-3 file:rounded-[var(--radius-button)] file:border-0 file:bg-[var(--color-tint-mint)] file:px-3 file:py-2 file:text-sm file:font-semibold file:text-[var(--color-primary-deep)]"
-        onChange={(event) => onChange(event.target.files?.[0]?.name ?? null)}
-        type="file"
-      />
+      <div className="grid gap-2">
+        <input
+          accept={attachmentFieldType === "screenshot" ? "image/*" : "video/*"}
+          className="rounded-[var(--radius-button)] border border-dashed border-[var(--color-stone)] bg-[var(--color-card)] p-3 text-sm file:mr-3 file:rounded-[var(--radius-button)] file:border-0 file:bg-[var(--color-tint-mint)] file:px-3 file:py-2 file:text-sm file:font-semibold file:text-[var(--color-primary-deep)]"
+          onChange={async (event) => {
+            const file = event.target.files?.[0]
+            onChange(file ? await createAttachmentAnswer(file, attachmentFieldType) : null)
+          }}
+          type="file"
+        />
+        {isAttachmentAnswer(value) ? (
+          <SelectedAttachmentPreview attachment={value} fieldType={attachmentFieldType} />
+        ) : null}
+      </div>
     )
   }
 
@@ -544,6 +563,42 @@ function getOptions(field: FormField): string[] {
 
 function getMaxRating(field: FormField): number {
   return "max" in field ? (field as StarRatingField).max : 5
+}
+
+function SelectedAttachmentPreview({
+  attachment,
+  fieldType,
+}: {
+  attachment: AttachmentAnswer
+  fieldType: "screenshot" | "video"
+}) {
+  const canPreview = fieldType === "screenshot" && attachment.previewDataUrl
+
+  return (
+    <div className="flex items-center gap-3 rounded-[var(--radius-button)] border border-[var(--color-hairline-soft)] bg-[var(--color-canvas)] p-2">
+      {canPreview ? (
+        <span
+          aria-label={`Preview of ${attachment.name}`}
+          className="h-14 w-20 shrink-0 rounded border border-[var(--color-hairline-soft)] bg-cover bg-center"
+          role="img"
+          style={{ backgroundImage: `url("${attachment.previewDataUrl}")` }}
+        />
+      ) : (
+        <span className="flex size-10 shrink-0 items-center justify-center rounded bg-[var(--color-tint-sky)] text-[var(--color-primary)]">
+          <Icon
+            aria-hidden
+            icon={fieldType === "screenshot" ? "solar:gallery-linear" : "solar:videocamera-linear"}
+          />
+        </span>
+      )}
+      <span className="min-w-0 text-xs text-[var(--color-slate)]">
+        <span className="block truncate font-medium text-[var(--color-charcoal)]">
+          {attachment.name}
+        </span>
+        <span>{formatFileSize(attachment.size)}</span>
+      </span>
+    </div>
+  )
 }
 
 function isSuiObjectId(value: string): boolean {

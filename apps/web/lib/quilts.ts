@@ -9,7 +9,7 @@ import type { UploadQuiltFile } from "./walrus"
  *     time. Replace the QUILT_COMPRESSION_FACTOR constant with a live estimate
  *     once the SDK exposes cost pre-flight queries.
  */
-const QUILT_COMPRESSION_FACTOR = 5
+export const QUILT_COMPRESSION_FACTOR = 5
 
 /** Minimum pending responses before quilt batching activates. */
 export const QUILT_THRESHOLD = 5

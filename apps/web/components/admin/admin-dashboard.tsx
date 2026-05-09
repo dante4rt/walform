@@ -6,6 +6,7 @@ import { RESPONSE_STATUSES, SEVERITIES } from "@walform/shared"
 import { useEffect, useMemo, useState } from "react"
 
 import { Button } from "@/components/ui"
+import { formatFileSize, isAttachmentAnswer, type AttachmentAnswer } from "@/lib/attachments"
 import { toCsv, type CsvColumn } from "@/lib/csv"
 import { getWebhookUrl, setWebhookUrl } from "@/lib/webhook"
 import { formatFormId } from "@/lib/utils"
@@ -22,14 +23,6 @@ type DateFilter = "all" | "24h" | "7d"
 
 interface AdminDashboardProps {
   formId: string
-}
-
-const severityRank: Record<Severity, number> = {
-  none: 0,
-  low: 1,
-  medium: 2,
-  high: 3,
-  critical: 4,
 }
 
 const severityClasses: Record<Severity, string> = {
@@ -118,10 +111,7 @@ export function AdminDashboard({ formId }: AdminDashboardProps) {
       .filter((record) => severity === "all" || record.ref.severity === severity)
       .filter((record) => status === "all" || record.ref.status === status)
       .filter((record) => record.ref.timestamp_ms >= minimumTimestamp)
-      .sort((first, second) => {
-        const severityDelta = severityRank[second.ref.severity] - severityRank[first.ref.severity]
-        return severityDelta || second.ref.timestamp_ms - first.ref.timestamp_ms
-      })
+      .sort((first, second) => second.ref.timestamp_ms - first.ref.timestamp_ms)
   }, [dateFilter, now, records, severity, status])
 
   const selectedRecord =
@@ -218,43 +208,54 @@ export function AdminDashboard({ formId }: AdminDashboardProps) {
               Response triage
             </h1>
           </div>
-          <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end sm:gap-3">
-            <label className="grid gap-1">
-              <span className="text-[11px] font-semibold uppercase tracking-wide text-[var(--color-slate)]">
-                Webhook
-              </span>
+          <div className="flex flex-col gap-1.5 sm:items-end">
+            <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end">
+              <label className="grid gap-1">
+                <span className="text-[11px] font-semibold uppercase tracking-wide text-[var(--color-slate)]">
+                  Webhook
+                </span>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="url"
+                    placeholder="https://"
+                    value={webhookUrl}
+                    onChange={(e) => {
+                      setWebhookUrlState(e.target.value)
+                      setWebhookSaved(false)
+                    }}
+                    className="h-9 min-w-0 flex-1 rounded-[var(--radius-button)] border border-[var(--color-hairline-soft)] bg-[var(--color-card)] px-3 font-mono text-xs text-[var(--color-charcoal)] outline-none transition-colors focus:border-[var(--color-primary)] sm:w-48"
+                  />
+                  <Button
+                    variant="ghost"
+                    className="h-9 rounded-[var(--radius-button)] px-3 text-xs"
+                    onClick={saveWebhook}
+                  >
+                    {webhookSaved ? "Saved" : "Hook"}
+                  </Button>
+                </div>
+              </label>
               <div className="flex items-center gap-2">
-                <input
-                  type="url"
-                  placeholder="https://"
-                  value={webhookUrl}
-                  onChange={(e) => {
-                    setWebhookUrlState(e.target.value)
-                    setWebhookSaved(false)
-                  }}
-                  className="h-9 min-w-0 flex-1 rounded-[var(--radius-button)] border border-[var(--color-hairline-soft)] bg-[var(--color-card)] px-3 font-mono text-xs text-[var(--color-charcoal)] outline-none transition-colors focus:border-[var(--color-primary)] sm:w-48"
-                />
                 <Button
-                  variant="ghost"
+                  variant="outline"
                   className="h-9 rounded-[var(--radius-button)] px-3 text-xs"
-                  onClick={saveWebhook}
+                  onClick={exportJson}
                 >
-                  {webhookSaved ? "Saved" : "Hook"}
+                  <Icon icon="solar:code-file-linear" className="h-4 w-4" />
+                  JSON
+                </Button>
+                <Button
+                  className="h-9 rounded-[var(--radius-button)] px-3 text-xs"
+                  onClick={exportCsv}
+                >
+                  <Icon icon="solar:download-minimalistic-linear" className="h-4 w-4" />
+                  CSV
                 </Button>
               </div>
-            </label>
-            <Button
-              variant="outline"
-              className="h-9 rounded-[var(--radius-button)] px-3 text-xs"
-              onClick={exportJson}
-            >
-              <Icon icon="solar:code-file-linear" className="h-4 w-4" />
-              JSON
-            </Button>
-            <Button className="h-9 rounded-[var(--radius-button)] px-3 text-xs" onClick={exportCsv}>
-              <Icon icon="solar:download-minimalistic-linear" className="h-4 w-4" />
-              CSV
-            </Button>
+            </div>
+            <p className="max-w-[29rem] text-[10px] leading-tight text-[var(--color-stone)] sm:text-right">
+              POSTs encrypted blob refs to your URL on each new submission. Payloads include an HMAC
+              signature header for verification.
+            </p>
           </div>
         </header>
 
@@ -313,7 +314,7 @@ export function AdminDashboard({ formId }: AdminDashboardProps) {
             <BountyPanel
               formId={formId}
               records={records}
-              packageId={getConfiguredPackageId() ?? "0xwalform_demo"}
+              packageId={getConfiguredPackageId()}
             />
           </div>
         )}
@@ -501,7 +502,7 @@ export function AdminDashboard({ formId }: AdminDashboardProps) {
                               {key}
                             </div>
                             <div className="mt-1 break-words text-sm text-[var(--color-charcoal)]">
-                              {formatAnswer(value)}
+                              <AnswerValue value={value} />
                             </div>
                           </div>
                         ))}
@@ -615,7 +616,7 @@ function FormIdPill({ formId }: { formId: string }) {
   const [copied, setCopied] = useState(false)
 
   function handleCopy() {
-    void navigator.clipboard.writeText(formId).then(() => {
+    void navigator.clipboard.writeText(getAdminUrl(formId)).then(() => {
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)
     })
@@ -629,8 +630,9 @@ function FormIdPill({ formId }: { formId: string }) {
       <span className="font-mono text-xs text-[var(--color-slate)]">{formatFormId(formId)}</span>
       <button
         type="button"
-        aria-label="Copy form ID"
+        aria-label="Copy admin URL"
         onClick={handleCopy}
+        title="Copy admin URL"
         className="flex items-center text-[var(--color-stone)] transition-colors hover:text-[var(--color-charcoal)]"
       >
         {copied ? (
@@ -643,6 +645,15 @@ function FormIdPill({ formId }: { formId: string }) {
       </button>
     </span>
   )
+}
+
+function getAdminUrl(formId: string): string {
+  const path = `/admin/?formId=${encodeURIComponent(formId)}`
+  if (typeof window === "undefined") {
+    return path
+  }
+
+  return new URL(path, window.location.origin).toString()
 }
 
 function AdminDashboardShell({ formId, state }: { formId: string; state: "loading" | "error" }) {
@@ -771,7 +782,7 @@ function SelectFilter({
 function SeverityBadge({ severity }: { severity: Severity }) {
   return (
     <span
-      className={`w-fit rounded border px-1.5 py-0.5 text-[11px] font-semibold ${severityClasses[severity]}`}
+      className={`inline-grid h-5 min-w-14 place-items-center justify-self-center self-center rounded border px-1.5 text-center text-[11px] font-semibold leading-none ${severityClasses[severity]}`}
     >
       {titleCase(severity)}
     </span>
@@ -811,9 +822,64 @@ function downloadText(filename: string, type: string, content: string) {
   URL.revokeObjectURL(url)
 }
 
-function formatAnswer(value: unknown) {
+function AnswerValue({ value }: { value: unknown }) {
+  if (isAttachmentAnswer(value)) {
+    return <AttachmentPreview attachment={value} />
+  }
+
+  return <>{formatAnswer(value)}</>
+}
+
+function AttachmentPreview({ attachment }: { attachment: AttachmentAnswer }) {
+  return (
+    <div className="overflow-hidden rounded-[var(--radius-button)] border border-[var(--color-hairline-soft)] bg-[var(--color-canvas)]">
+      {attachment.previewDataUrl ? (
+        <a
+          className="block"
+          href={attachment.previewDataUrl}
+          rel="noreferrer"
+          target="_blank"
+          title={`Open ${attachment.name}`}
+        >
+          <span
+            aria-label={`Preview of ${attachment.name}`}
+            className="block aspect-video w-full bg-[var(--color-card)] bg-contain bg-center bg-no-repeat"
+            role="img"
+            style={{ backgroundImage: `url("${attachment.previewDataUrl}")` }}
+          />
+        </a>
+      ) : null}
+      <div className="flex items-center justify-between gap-3 border-t border-[var(--color-hairline-soft)] px-3 py-2">
+        <div className="min-w-0">
+          <p className="truncate text-xs font-semibold text-[var(--color-ink)]">
+            {attachment.name}
+          </p>
+          <p className="mt-0.5 text-[11px] text-[var(--color-slate)]">
+            {attachment.mimeType || "Unknown type"} · {formatFileSize(attachment.size)}
+          </p>
+        </div>
+        {attachment.previewDataUrl ? (
+          <a
+            className="shrink-0 rounded-[var(--radius-button)] border border-[var(--color-hairline-soft)] px-2.5 py-1 text-[11px] font-semibold text-[var(--color-primary)] transition-colors hover:bg-[var(--color-tint-mint)]"
+            href={attachment.previewDataUrl}
+            rel="noreferrer"
+            target="_blank"
+          >
+            View
+          </a>
+        ) : null}
+      </div>
+    </div>
+  )
+}
+
+function formatAnswer(value: unknown): string {
   if (Array.isArray(value)) {
     return value.join(", ")
+  }
+
+  if (isAttachmentAnswer(value)) {
+    return value.name
   }
 
   if (typeof value === "object" && value !== null) {

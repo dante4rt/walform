@@ -1,10 +1,7 @@
-// Walform Service Worker — cache-first for static assets, network-first for pages.
+// Walform Service Worker — network-first for app code, cache-first for media.
 // Version bump forces update on deploy.
-const CACHE_VERSION = "walform-v1";
+const CACHE_VERSION = "walform-v2";
 const STATIC_ASSETS = [
-  "/",
-  "/builder/",
-  "/templates/",
   "/pwa/manifest.json",
   "/pwa/icons/icon-192.png",
   "/pwa/icons/icon-512.png",
@@ -56,7 +53,24 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // Static assets (JS, CSS, images, fonts): cache-first.
+  // Next.js app assets should not be cache-first during hackathon iteration.
+  // A stale admin chunk can re-introduce removed demo seed data after a normal refresh.
+  if (new URL(request.url).pathname.startsWith("/_next/")) {
+    event.respondWith(
+      fetch(request)
+        .then((response) => {
+          if (response.ok) {
+            const clone = response.clone();
+            caches.open(CACHE_VERSION).then((cache) => cache.put(request, clone));
+          }
+          return response;
+        })
+        .catch(() => caches.match(request))
+    );
+    return;
+  }
+
+  // Media and manifest assets: cache-first.
   event.respondWith(
     caches.match(request).then((cached) => {
       if (cached) return cached;

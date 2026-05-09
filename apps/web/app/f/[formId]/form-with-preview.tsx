@@ -9,6 +9,7 @@ import { PublicForm } from "@/components/form/public-form"
 interface FormWithPreviewProps {
   formId: string
   fallbackSchema: WalformSchema
+  adminReturnHref?: string
 }
 
 function getStoredSchemaJson(formId: string): string | null {
@@ -39,7 +40,11 @@ function subscribeToStoredSchema(onStoreChange: () => void) {
  * Client wrapper that checks localStorage for a builder-exported schema.
  * If found, uses it instead of the fallback (demo) schema.
  */
-export function FormWithPreview({ formId, fallbackSchema }: FormWithPreviewProps) {
+export function FormWithPreview({
+  formId,
+  fallbackSchema,
+  adminReturnHref,
+}: FormWithPreviewProps) {
   const storedSchemaJson = useSyncExternalStore(
     subscribeToStoredSchema,
     () => getStoredSchemaJson(formId),
@@ -50,5 +55,5 @@ export function FormWithPreview({ formId, fallbackSchema }: FormWithPreviewProps
     [fallbackSchema, storedSchemaJson],
   )
 
-  return <PublicForm formId={formId} schema={schema} />
+  return <PublicForm formId={formId} schema={schema} adminReturnHref={adminReturnHref} />
 }

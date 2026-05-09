@@ -121,6 +121,39 @@ const moveFunctions = [
   ["bounty::claim", "Claim bounty escrow"],
 ]
 
+const EXAMPLE_CODE = `import { WalrusClient } from "@mysten/walrus"
+import { SealClient } from "@mysten/seal"
+import { Transaction } from "@mysten/sui/transactions"
+
+const walrus = new WalrusClient({
+  network: "mainnet",
+})
+const seal = new SealClient({
+  serverObjectIds,
+})
+
+const { encryptedObject } = await seal
+  .encrypt({
+    threshold: 2,
+    packageId: WALFORM_PACKAGE_ID,
+    identity: formId,
+    data: new TextEncoder()
+      .encode(JSON.stringify(response)),
+  })
+
+const blobId = await walrus
+  .storeBlob(encryptedObject)
+
+const tx = new Transaction()
+tx.moveCall({
+  target: WALFORM_PACKAGE_ID
+    + "::form::submit_response",
+  arguments: [
+    tx.object(formId),
+    tx.pure.vector("u8", blobId),
+  ],
+})`
+
 function FieldPreview({
   label,
   meta,
@@ -187,7 +220,10 @@ function StatCard({ value, label }: { value: string; label: string }) {
 function ProductMockup() {
   return (
     <div className="relative">
-      <div className="absolute -right-6 top-20 z-10 hidden w-44 space-y-3 lg:block">
+      <div
+        suppressHydrationWarning
+        className="absolute -right-6 top-20 z-10 hidden w-44 space-y-3 lg:block"
+      >
         {[
           ["solar:shield-keyhole-linear", "Response encrypted with Seal"],
           ["solar:database-linear", "Stored as Walrus blob"],
@@ -250,6 +286,7 @@ export default function Home() {
   return (
     <main
       ref={scrollRef}
+      suppressHydrationWarning
       className="grain-overlay landing-bg min-h-[100dvh] bg-[var(--color-canvas)] text-[var(--color-charcoal)]"
     >
       <section className="relative mx-auto grid max-w-7xl gap-12 px-5 pb-16 pt-12 md:grid-cols-[0.95fr_1.05fr] md:items-center md:px-8 md:pb-24 md:pt-20">
@@ -484,7 +521,10 @@ export default function Home() {
             ))}
           </div>
         </div>
-        <div className="scroll-reveal min-w-0 overflow-hidden rounded-[var(--radius-card)] border border-[var(--color-hairline-soft)] bg-[var(--color-card)] p-5 shadow-[var(--shadow-card)]">
+        <div
+          suppressHydrationWarning
+          className="scroll-reveal min-w-0 overflow-hidden rounded-[var(--radius-card)] border border-[var(--color-hairline-soft)] bg-[var(--color-card)] p-5 shadow-[var(--shadow-card)]"
+        >
           <div className="mb-4 flex items-center justify-between border-b border-[var(--color-hairline-soft)] pb-3">
             <span className="font-mono text-xs font-bold text-[var(--color-primary)]">
               TypeScript
@@ -493,39 +533,11 @@ export default function Home() {
               Example
             </span>
           </div>
-          <pre className="overflow-x-auto font-mono text-[11px] leading-6 text-[var(--color-charcoal)]">
-            <code>{`import { WalrusClient } from "@mysten/walrus"
-import { SealClient } from "@mysten/seal"
-import { Transaction } from "@mysten/sui/transactions"
-
-const walrus = new WalrusClient({
-  network: "mainnet",
-})
-const seal = new SealClient({
-  serverObjectIds,
-})
-
-const { encryptedObject } = await seal
-  .encrypt({
-    threshold: 2,
-    packageId: WALFORM_PACKAGE_ID,
-    identity: formId,
-    data: new TextEncoder()
-      .encode(JSON.stringify(response)),
-  })
-
-const blobId = await walrus
-  .storeBlob(encryptedObject)
-
-const tx = new Transaction()
-tx.moveCall({
-  target: WALFORM_PACKAGE_ID
-    + "::form::submit_response",
-  arguments: [
-    tx.object(formId),
-    tx.pure.vector("u8", blobId),
-  ],
-})`}</code>
+          <pre
+            suppressHydrationWarning
+            className="overflow-x-auto font-mono text-[11px] leading-6 text-[var(--color-charcoal)]"
+          >
+            <code>{EXAMPLE_CODE}</code>
           </pre>
         </div>
       </section>

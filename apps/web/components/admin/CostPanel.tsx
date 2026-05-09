@@ -2,32 +2,41 @@
 
 import { Icon } from "@iconify/react"
 
-import { estimateQuiltSavings, QUILT_THRESHOLD, shouldUseQuilt } from "@/lib/quilts"
+import { estimateCostMist, formatCostWal, EPOCHS_DEFAULT } from "@/lib/cost"
+import { QUILT_COMPRESSION_FACTOR, QUILT_THRESHOLD, shouldUseQuilt } from "@/lib/quilts"
 
 interface CostPanelProps {
   responseCount: number
 }
 
 export function CostPanel({ responseCount }: CostPanelProps) {
-  const estimate = estimateQuiltSavings(responseCount)
   const quiltActive = shouldUseQuilt(responseCount)
+
+  // Real WAL costs based on Walrus testnet pricing
+  const soloCostMist = estimateCostMist({ responseCount, epochs: EPOCHS_DEFAULT })
+  const quiltedCostMist =
+    responseCount > 0 ? soloCostMist / BigInt(QUILT_COMPRESSION_FACTOR) : BigInt(0)
+  const savingsPct =
+    responseCount > 0
+      ? Math.round((Number(soloCostMist - quiltedCostMist) / Number(soloCostMist)) * 1000) / 10
+      : 0
 
   // Bar widths: solo is always 100%, quilted is proportional.
   const quiltedBarPct =
-    responseCount > 0 ? Math.max(4, (estimate.quilted / estimate.soloBlobs) * 100) : 4
+    responseCount > 0 ? Math.max(4, (Number(quiltedCostMist) / Number(soloCostMist)) * 100) : 4
 
   return (
     <div className="flex flex-col gap-6">
       <div>
         <h2 className="text-lg font-semibold text-[var(--color-ink)]">Storage cost estimate</h2>
         <p className="mt-1 text-sm text-[var(--color-slate)]">
-          Comparative cost in abstract storage units.{" "}
-          <span className="font-medium text-[var(--color-charcoal)]">5× compression</span> assumed
-          for quilt batching — see{" "}
-          <code className="rounded bg-[var(--color-hairline-soft)] px-1 py-0.5 font-mono text-xs">
-            lib/quilts.ts
-          </code>{" "}
-          for the model.
+          Estimated cost over{" "}
+          <span className="font-medium text-[var(--color-charcoal)]">{EPOCHS_DEFAULT} epochs</span>{" "}
+          based on Walrus testnet pricing.{" "}
+          <span className="font-medium text-[var(--color-charcoal)]">
+            {QUILT_COMPRESSION_FACTOR}x compression
+          </span>{" "}
+          assumed for quilt batching. Costs vary by blob size and network epoch prices.
         </p>
       </div>
 
@@ -40,7 +49,7 @@ export function CostPanel({ responseCount }: CostPanelProps) {
                 Upload method
               </th>
               <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-[var(--color-slate)]">
-                Storage units
+                Cost (WAL)
               </th>
             </tr>
           </thead>
@@ -50,7 +59,7 @@ export function CostPanel({ responseCount }: CostPanelProps) {
                 Solo uploads ({responseCount} {responseCount === 1 ? "response" : "responses"})
               </td>
               <td className="px-4 py-3 text-right font-mono font-semibold text-[var(--color-charcoal)]">
-                {estimate.soloBlobs.toFixed(1)}
+                {formatCostWal(soloCostMist)}
               </td>
             </tr>
             <tr>
@@ -58,7 +67,7 @@ export function CostPanel({ responseCount }: CostPanelProps) {
                 Quilted uploads ({responseCount} {responseCount === 1 ? "response" : "responses"})
               </td>
               <td className="px-4 py-3 text-right font-mono font-semibold text-[var(--color-charcoal)]">
-                {estimate.quilted.toFixed(1)}
+                {formatCostWal(quiltedCostMist)}
               </td>
             </tr>
             <tr className="bg-emerald-50">
@@ -69,7 +78,7 @@ export function CostPanel({ responseCount }: CostPanelProps) {
                 </span>
               </td>
               <td className="px-4 py-3 text-right font-mono text-lg font-bold text-emerald-600">
-                {estimate.savingsPct}%
+                {savingsPct}%
               </td>
             </tr>
           </tbody>
@@ -88,7 +97,7 @@ export function CostPanel({ responseCount }: CostPanelProps) {
           <div>
             <div className="mb-1 flex items-center justify-between text-xs text-[var(--color-slate)]">
               <span>Solo</span>
-              <span className="font-mono">{estimate.soloBlobs.toFixed(1)} u</span>
+              <span className="font-mono">{formatCostWal(soloCostMist)}</span>
             </div>
             <div className="h-6 w-full overflow-hidden rounded-md bg-[var(--color-canvas)]">
               <div
@@ -101,7 +110,7 @@ export function CostPanel({ responseCount }: CostPanelProps) {
           <div>
             <div className="mb-1 flex items-center justify-between text-xs text-[var(--color-slate)]">
               <span>Quilted</span>
-              <span className="font-mono">{estimate.quilted.toFixed(1)} u</span>
+              <span className="font-mono">{formatCostWal(quiltedCostMist)}</span>
             </div>
             <div className="h-6 w-full overflow-hidden rounded-md bg-[var(--color-canvas)]">
               <div

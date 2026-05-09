@@ -10,6 +10,10 @@ import { getDemoFormSchema } from "@/lib/demo-form"
 function PublicFormPageContent() {
   const searchParams = useSearchParams()
   const formId = searchParams.get("formId") || "demo"
+  const adminReturnHref =
+    searchParams.get("from") === "admin"
+      ? `/admin/?formId=${encodeURIComponent(formId)}`
+      : undefined
   const schema = getDemoFormSchema()
 
   if (!formId.trim()) {
@@ -31,7 +35,13 @@ function PublicFormPageContent() {
     )
   }
 
-  return <FormWithPreview formId={formId} fallbackSchema={schema} />
+  return (
+    <FormWithPreview
+      formId={formId}
+      fallbackSchema={schema}
+      adminReturnHref={adminReturnHref}
+    />
+  )
 }
 
 export default function PublicFormPage() {

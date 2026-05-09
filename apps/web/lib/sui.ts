@@ -123,6 +123,10 @@ export function getConfiguredSuiChain(): "sui:testnet" | "sui:mainnet" {
   return process.env.NEXT_PUBLIC_SUI_NETWORK === "mainnet" ? "sui:mainnet" : "sui:testnet"
 }
 
+export function isSuiObjectId(value: string | null | undefined): value is string {
+  return typeof value === "string" && /^0x[a-fA-F0-9]{64}$/.test(value)
+}
+
 export function createFormTransaction(packageId: string, schemaBlobId: string) {
   const tx = new Transaction()
   tx.setGasBudget(20_000_000)
@@ -145,6 +149,40 @@ export function extractCreatedObjectId(
     }
   }
   return null
+}
+
+export function createDepositBountyTransaction(input: {
+  packageId: string
+  formId: string
+  amountMist: bigint
+}) {
+  const tx = new Transaction()
+  tx.setGasBudget(20_000_000)
+  const coin = tx.coin({
+    type: `${input.packageId}::form::WAL`,
+    balance: input.amountMist,
+  })
+  tx.moveCall({
+    target: `${input.packageId}::bounty::deposit`,
+    arguments: [tx.object(input.formId), coin],
+  })
+  return tx
+}
+
+export function createApproveResponseTransaction(input: {
+  packageId: string
+  formId: string
+  responseIndex: number
+  submitter: string
+}) {
+  const tx = new Transaction()
+  tx.setGasBudget(20_000_000)
+  const payout = tx.moveCall({
+    target: `${input.packageId}::bounty::approve_response`,
+    arguments: [tx.object(input.formId), tx.pure.u64(input.responseIndex)],
+  })
+  tx.transferObjects([payout], tx.pure.address(input.submitter))
+  return tx
 }
 
 function bytes(value: string): number[] {

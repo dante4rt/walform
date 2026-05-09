@@ -1,11 +1,17 @@
 "use client"
 
 import { Icon } from "@iconify/react"
+import { useCurrentAccount, useSignAndExecuteTransaction, useSuiClient } from "@mysten/dapp-kit"
 import type { Severity } from "@walform/shared"
 import { useRef, useState } from "react"
 
 import { Button } from "@/components/ui"
-import { approveBountyResponse, depositBounty } from "@walform/sdk"
+import {
+  createApproveResponseTransaction,
+  createDepositBountyTransaction,
+  getConfiguredSuiChain,
+  isSuiObjectId,
+} from "@/lib/sui"
 
 import type { AdminResponseRecord } from "./admin-adapter"
 
@@ -20,15 +26,10 @@ interface BountyTiers {
   critical: string
 }
 
-interface TxDraft {
-  label: string
-  payload: unknown
-}
-
 export interface BountyPanelProps {
   formId: string
   records: AdminResponseRecord[]
-  packageId: string
+  packageId: string | null
 }
 
 // ---------------------------------------------------------------------------
@@ -68,6 +69,8 @@ const SEVERITY_COLORS: Record<Severity, string> = {
   high: "text-[var(--color-warning)]",
   critical: "text-[var(--color-error)]",
 }
+
+const ON_CHAIN_BOUNTY_ENABLED = process.env.NEXT_PUBLIC_ENABLE_ONCHAIN_BOUNTY === "true"
 
 // ---------------------------------------------------------------------------
 // Sub-components
@@ -130,7 +133,17 @@ function WalInput({
   )
 }
 
-function TxDraftPanel({ draft, onClose }: { draft: TxDraft; onClose: () => void }) {
+function TxDraftPanel({
+  label,
+  state,
+  error,
+  onClose,
+}: {
+  label: string
+  state: "signing" | "success" | "error"
+  error: string | null
+  onClose: () => void
+}) {
   return (
     <div
       className="t-panel-slide rounded-[var(--radius-card)] border border-[var(--color-hairline)] bg-[var(--color-card)] overflow-hidden"
@@ -138,23 +151,44 @@ function TxDraftPanel({ draft, onClose }: { draft: TxDraft; onClose: () => void 
     >
       <div className="flex items-center justify-between border-b border-[var(--color-hairline-soft)] px-4 py-3">
         <div className="flex items-center gap-2">
-          <Icon icon="solar:code-square-linear" className="h-4 w-4 text-[var(--color-primary)]" />
-          <span className="text-sm font-semibold text-[var(--color-ink)]">{draft.label}</span>
-          <span className="rounded-full bg-[var(--color-warning)]/15 px-2 py-0.5 text-xs font-medium text-[var(--color-warning)]">
-            draft — not signed
+          <Icon
+            icon={
+              state === "signing"
+                ? "solar:refresh-circle-linear"
+                : state === "success"
+                  ? "solar:check-circle-linear"
+                  : "solar:danger-circle-linear"
+            }
+            className={`h-4 w-4 ${state === "success" ? "text-[var(--color-success)]" : state === "error" ? "text-[var(--color-error)]" : "text-[var(--color-primary)]"}`}
+          />
+          <span className="text-sm font-semibold text-[var(--color-ink)]">{label}</span>
+          <span
+            className={`rounded-full px-2 py-0.5 text-xs font-medium ${
+              state === "signing"
+                ? "bg-[var(--color-primary)]/10 text-[var(--color-primary)]"
+                : state === "success"
+                  ? "bg-[var(--color-success)]/10 text-[var(--color-success)]"
+                  : "bg-[var(--color-error)]/10 text-[var(--color-error)]"
+            }`}
+          >
+            {state === "signing"
+              ? "Awaiting signature..."
+              : state === "success"
+                ? "Confirmed"
+                : "Failed"}
           </span>
         </div>
-        <button
-          onClick={onClose}
-          aria-label="Dismiss draft"
-          className="rounded p-1 text-[var(--color-stone)] hover:text-[var(--color-charcoal)] transition-colors"
-        >
-          <Icon icon="solar:close-circle-linear" className="h-4 w-4" />
-        </button>
+        {state !== "signing" && (
+          <button
+            onClick={onClose}
+            aria-label="Dismiss"
+            className="rounded p-1 text-[var(--color-stone)] hover:text-[var(--color-charcoal)] transition-colors"
+          >
+            <Icon icon="solar:close-circle-linear" className="h-4 w-4" />
+          </button>
+        )}
       </div>
-      <pre className="overflow-x-auto p-4 font-mono text-xs leading-relaxed text-[var(--color-charcoal)]">
-        {JSON.stringify(draft.payload, null, 2)}
-      </pre>
+      {error && <div className="px-4 py-3 text-xs text-[var(--color-error)]">{error}</div>}
     </div>
   )
 }
@@ -164,70 +198,135 @@ function TxDraftPanel({ draft, onClose }: { draft: TxDraft; onClose: () => void 
 // ---------------------------------------------------------------------------
 
 export function BountyPanel({ formId, records, packageId }: BountyPanelProps) {
-  // Simulated on-chain pool balance (MIST)
-  const [poolBalance] = useState<bigint>(BigInt(12_500_000_000)) // 12.5 WAL demo value
+  const currentAccount = useCurrentAccount()
+  const suiClient = useSuiClient()
+  const { mutateAsync: signAndExecuteTransaction } = useSignAndExecuteTransaction({
+    execute: async ({ bytes, signature }) =>
+      suiClient.executeTransactionBlock({
+        transactionBlock: bytes,
+        signature,
+        options: { showEffects: true, showObjectChanges: true },
+      }),
+  })
+
+  const [poolBalance, setPoolBalance] = useState<bigint>(BigInt(0))
 
   // Deposit form state
   const [depositAmount, setDepositAmount] = useState("")
-  const [depositDraft, setDepositDraft] = useState<TxDraft | null>(null)
+  const [depositState, setDepositState] = useState<"idle" | "signing" | "success" | "error">("idle")
+  const [depositError, setDepositError] = useState<string | null>(null)
 
   // Tier config state
   const [tiers, setTiers] = useState<BountyTiers>({
-    low: "5",
-    medium: "25",
-    high: "100",
-    critical: "500",
+    low: "0.05",
+    medium: "0.1",
+    high: "0.25",
+    critical: "1",
   })
 
-  // Per-response approval drafts
-  const [approvalDrafts, setApprovalDrafts] = useState<Record<number, TxDraft>>({})
+  // Per-response approval states
+  const [approvalStates, setApprovalStates] = useState<
+    Record<number, "idle" | "signing" | "success" | "error">
+  >({})
+  const [approvalErrors, setApprovalErrors] = useState<Record<number, string | null>>({})
 
   // Text-swap animation refs for button labels
   const depositLabelRef = useRef<HTMLSpanElement>(null)
 
   const anonMode = isAnonMode(records)
   const approvableRecords = records.filter(isApprovable)
+  const canExecuteOnChainBounty =
+    ON_CHAIN_BOUNTY_ENABLED &&
+    Boolean(currentAccount) &&
+    isSuiObjectId(packageId) &&
+    isSuiObjectId(formId)
+  const bountyModeLabel = ON_CHAIN_BOUNTY_ENABLED ? "On-chain bounty" : "Demo escrow"
 
   // ---------------------------------------------------------------------------
   // Handlers
   // ---------------------------------------------------------------------------
 
-  function handleDeposit() {
+  async function handleDeposit() {
     const mist = walToMist(depositAmount)
     if (mist === BigInt(0)) return
 
-    const payload = depositBounty({
-      packageId,
-      formId,
-      amountMist: mist,
-    })
+    setDepositState("signing")
+    setDepositError(null)
 
-    setDepositDraft({
-      label: `deposit_bounty(${depositAmount} WAL)`,
-      payload,
-    })
+    try {
+      if (ON_CHAIN_BOUNTY_ENABLED) {
+        if (!currentAccount || !isSuiObjectId(packageId) || !isSuiObjectId(formId)) {
+          throw new Error("On-chain bounty requires a connected wallet and deployed Sui form.")
+        }
 
-    animateTextSwap(depositLabelRef.current, "Draft ready")
+        const tx = createDepositBountyTransaction({ packageId, formId, amountMist: mist })
+        await signAndExecuteTransaction({
+          transaction: tx,
+          account: currentAccount,
+          chain: getConfiguredSuiChain(),
+        })
+      }
+
+      setPoolBalance((prev) => prev + mist)
+      setDepositState("success")
+      setDepositAmount("")
+      animateTextSwap(depositLabelRef.current, ON_CHAIN_BOUNTY_ENABLED ? "Deposited" : "Added")
+      setTimeout(() => setDepositState("idle"), 3000)
+    } catch (err) {
+      setDepositState("error")
+      setDepositError(getBountyErrorMessage(err))
+    }
   }
 
-  function handleApprove(record: AdminResponseRecord) {
-    const payload = approveBountyResponse({
-      packageId,
-      formId,
-      responseIndex: record.index,
-    })
+  async function handleApprove(record: AdminResponseRecord) {
+    if (!record.ref.submitter) return
 
-    setApprovalDrafts((prev) => ({
-      ...prev,
-      [record.index]: {
-        label: `approve_response(#${record.index}, ${record.ref.submitter?.slice(0, 8)}…)`,
-        payload,
-      },
-    }))
+    setApprovalStates((prev) => ({ ...prev, [record.index]: "signing" }))
+    setApprovalErrors((prev) => ({ ...prev, [record.index]: null }))
+
+    try {
+      const tierMist = walToMist(tiers[record.ref.severity as keyof BountyTiers] ?? "0")
+
+      if (!ON_CHAIN_BOUNTY_ENABLED && poolBalance < tierMist) {
+        throw new Error("Deposit enough WAL before approving this response.")
+      }
+
+      if (ON_CHAIN_BOUNTY_ENABLED) {
+        if (!currentAccount || !isSuiObjectId(packageId) || !isSuiObjectId(formId)) {
+          throw new Error("On-chain bounty requires a connected wallet and deployed Sui form.")
+        }
+
+        const tx = createApproveResponseTransaction({
+          packageId,
+          formId,
+          responseIndex: record.index,
+          submitter: record.ref.submitter,
+        })
+        await signAndExecuteTransaction({
+          transaction: tx,
+          account: currentAccount,
+          chain: getConfiguredSuiChain(),
+        })
+      }
+
+      setPoolBalance((prev) => (prev > tierMist ? prev - tierMist : BigInt(0)))
+      setApprovalStates((prev) => ({ ...prev, [record.index]: "success" }))
+    } catch (err) {
+      setApprovalStates((prev) => ({ ...prev, [record.index]: "error" }))
+      setApprovalErrors((prev) => ({
+        ...prev,
+        [record.index]: getBountyErrorMessage(err),
+      }))
+    }
   }
 
-  function dismissApprovalDraft(index: number) {
-    setApprovalDrafts((prev) => {
+  function dismissApprovalState(index: number) {
+    setApprovalStates((prev) => {
+      const next = { ...prev }
+      delete next[index]
+      return next
+    })
+    setApprovalErrors((prev) => {
       const next = { ...prev }
       delete next[index]
       return next
@@ -264,6 +363,9 @@ export function BountyPanel({ formId, records, packageId }: BountyPanelProps) {
             <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-[var(--color-slate)]">
               <Icon icon="solar:wallet-linear" className="h-4 w-4 text-[var(--color-primary)]" />
               Bounty pool
+              <span className="rounded-full bg-[var(--color-primary)]/10 px-2 py-0.5 text-[10px] text-[var(--color-primary)]">
+                {bountyModeLabel}
+              </span>
             </div>
             <div className="mt-2 flex items-baseline gap-2">
               <span className="font-mono text-3xl font-bold text-[var(--color-ink)]">
@@ -302,7 +404,12 @@ export function BountyPanel({ formId, records, packageId }: BountyPanelProps) {
             variant="default"
             className="h-10 rounded-lg px-4 text-sm"
             onClick={handleDeposit}
-            disabled={anonMode || !depositAmount || walToMist(depositAmount) === BigInt(0)}
+            disabled={
+              anonMode ||
+              !depositAmount ||
+              walToMist(depositAmount) === BigInt(0) ||
+              (ON_CHAIN_BOUNTY_ENABLED && !canExecuteOnChainBounty)
+            }
           >
             <Icon icon="solar:transfer-horizontal-linear" className="h-4 w-4" />
             <span ref={depositLabelRef} className="t-text-swap">
@@ -311,9 +418,24 @@ export function BountyPanel({ formId, records, packageId }: BountyPanelProps) {
           </Button>
         </div>
 
-        {depositDraft && (
-          <div className="mt-4">
-            <TxDraftPanel draft={depositDraft} onClose={() => setDepositDraft(null)} />
+        {depositState === "success" && (
+          <p className="mt-3 text-xs font-medium text-[var(--color-success)]">
+            {ON_CHAIN_BOUNTY_ENABLED
+              ? "Deposit confirmed on-chain."
+              : "Deposit added to the demo escrow."}
+          </p>
+        )}
+        {depositState === "error" && depositError && (
+          <div className="mt-3">
+            <TxDraftPanel
+              label={`Deposit ${depositAmount} WAL`}
+              state="error"
+              error={depositError}
+              onClose={() => {
+                setDepositState("idle")
+                setDepositError(null)
+              }}
+            />
           </div>
         )}
       </SectionCard>
@@ -379,7 +501,6 @@ export function BountyPanel({ formId, records, packageId }: BountyPanelProps) {
         ) : (
           <div className="flex flex-col gap-3">
             {approvableRecords.map((record) => {
-              const draft = approvalDrafts[record.index]
               const tierAmount =
                 record.ref.severity !== "none"
                   ? (tiers[record.ref.severity as keyof BountyTiers] ?? "—")
@@ -412,19 +533,29 @@ export function BountyPanel({ formId, records, packageId }: BountyPanelProps) {
                         variant="default"
                         className="h-8 rounded-lg px-3 text-xs"
                         onClick={() => handleApprove(record)}
+                        disabled={
+                          approvalStates[record.index] === "signing" ||
+                          (ON_CHAIN_BOUNTY_ENABLED && !canExecuteOnChainBounty)
+                        }
                       >
                         <Icon icon="solar:medal-ribbons-star-linear" className="h-3.5 w-3.5" />
-                        Approve &amp; Pay
+                        {approvalStates[record.index] === "signing"
+                          ? "Signing..."
+                          : approvalStates[record.index] === "success"
+                            ? "Paid"
+                            : "Approve & Pay"}
                       </Button>
                     </div>
                   </div>
 
-                  {draft && (
+                  {approvalStates[record.index] && approvalStates[record.index] !== "idle" ? (
                     <TxDraftPanel
-                      draft={draft}
-                      onClose={() => dismissApprovalDraft(record.index)}
+                      label={`Approve #${record.index} — ${record.ref.submitter?.slice(0, 8)}...`}
+                      state={approvalStates[record.index] as "signing" | "success" | "error"}
+                      error={approvalErrors[record.index] ?? null}
+                      onClose={() => dismissApprovalState(record.index)}
                     />
-                  )}
+                  ) : null}
                 </div>
               )
             })}
@@ -454,4 +585,14 @@ function animateTextSwap(el: HTMLElement | null, next: string) {
     void el.offsetHeight
     el.classList.remove("is-enter-start")
   }, dur)
+}
+
+function getBountyErrorMessage(error: unknown): string {
+  const message = error instanceof Error ? error.message : "Transaction failed"
+
+  if (message.includes("Expected Object but received Object")) {
+    return "The bounty transaction shape is not supported by the current wallet/contract setup. Demo escrow mode is enabled by default for this build."
+  }
+
+  return message
 }
