@@ -533,7 +533,7 @@ export default function Home() {
       suppressHydrationWarning
       className="grain-overlay landing-bg min-h-[100dvh] bg-[var(--color-canvas)] text-[var(--color-charcoal)]"
     >
-      <section className="relative mx-auto grid max-w-7xl gap-12 px-5 pb-16 pt-12 md:grid-cols-[0.95fr_1.05fr] md:items-center md:gap-10 md:px-8 md:pb-12 md:pt-16 md:min-h-[100dvh]">
+      <section className="relative mx-auto grid max-w-7xl gap-12 px-5 pb-16 pt-12 md:grid-cols-[0.95fr_1.05fr] md:items-center md:gap-10 md:px-8 md:pb-12 md:pt-0 md:min-h-[100dvh]">
         <div className="scroll-reveal relative z-10">
           <p className="mb-5 inline-flex items-center gap-2 rounded-[var(--radius-pill)] border border-[var(--color-hairline)] bg-[var(--color-card)] px-3 py-1.5 text-xs font-bold text-[var(--color-primary-deep)]">
             <Icon icon="solar:verified-check-linear" width={15} height={15} />
