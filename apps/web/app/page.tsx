@@ -164,17 +164,159 @@ function FieldPreview({
   required?: boolean
 }) {
   return (
-    <div className="rounded-[var(--radius-card)] border border-[var(--color-hairline-soft)] bg-[var(--color-card)] p-4 shadow-[var(--shadow-card)]">
-      <div className="flex items-start justify-between gap-3">
+    <div className="rounded-[var(--radius-card)] border border-[var(--color-hairline-soft)] bg-[var(--color-card)] p-3 shadow-[var(--shadow-card)]">
+      <div className="flex items-center justify-between gap-3">
         <p className="text-sm font-semibold text-[var(--color-ink)]">{label}</p>
         <span className="font-mono text-[10px] text-[var(--color-stone)]">{meta}</span>
       </div>
-      <div className="mt-3 h-10 rounded-[var(--radius-button)] border border-dashed border-[var(--color-hairline)] bg-[var(--color-canvas)]" />
+      <div className="mt-2 h-7 rounded-[var(--radius-button)] border border-dashed border-[var(--color-hairline)] bg-[var(--color-canvas)]" />
       {required && (
         <span className="mt-2 inline-flex rounded-[var(--radius-pill)] bg-[var(--color-tint-mint)] px-2 py-0.5 text-[10px] font-semibold text-[var(--color-primary-deep)]">
           Required
         </span>
       )}
+    </div>
+  )
+}
+
+function useAnimatedNumber(target: number, durationMs = 900, decimals = 0) {
+  const [value, setValue] = useState(0)
+  useEffect(() => {
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches
+    let raf = 0
+    if (reduce) {
+      const id = window.setTimeout(() => setValue(target), 0)
+      return () => window.clearTimeout(id)
+    }
+    const start = performance.now()
+    const tick = (now: number) => {
+      const t = Math.min(1, (now - start) / durationMs)
+      const eased = 1 - Math.pow(1 - t, 3)
+      setValue(target * eased)
+      if (t < 1) raf = requestAnimationFrame(tick)
+    }
+    raf = requestAnimationFrame(tick)
+    return () => cancelAnimationFrame(raf)
+  }, [target, durationMs])
+  return decimals > 0 ? value.toFixed(decimals) : Math.round(value).toString()
+}
+
+type MockupTab = "builder" | "preview" | "responses"
+
+function BuilderPanel() {
+  return (
+    <div className="grid gap-2">
+      <FieldPreview label="What worked well?" meta="Long text" required />
+      <FieldPreview label="Overall rating" meta="Scale 1-10" required />
+      <FieldPreview label="Attach screenshot" meta="File upload" />
+    </div>
+  )
+}
+
+function PreviewPanel() {
+  const [text, setText] = useState("")
+  const [rating, setRating] = useState<number | null>(null)
+  const [submitted, setSubmitted] = useState(false)
+
+  const submit = () => {
+    if (!text.trim() || rating === null) return
+    setSubmitted(true)
+  }
+
+  return (
+    <div className="grid gap-2.5">
+      <div className="rounded-[var(--radius-card)] border border-[var(--color-hairline-soft)] bg-[var(--color-card)] p-3 shadow-[var(--shadow-card)]">
+        <div className="mb-2 flex items-center justify-between gap-3">
+          <p className="text-sm font-semibold text-[var(--color-ink)]">What worked well?</p>
+          <span className="inline-flex items-center gap-1 rounded-[var(--radius-pill)] bg-[var(--color-tint-mint)] px-2 py-0.5 text-[10px] font-semibold text-[var(--color-primary-deep)]">
+            <Icon icon="solar:lock-keyhole-linear" width={11} height={11} />
+            Encrypted
+          </span>
+        </div>
+        <textarea
+          className="mockup-input"
+          placeholder="The Move primitive felt obvious by minute three..."
+          value={text}
+          onChange={(event) => setText(event.target.value)}
+          aria-label="Sample feedback input"
+        />
+      </div>
+
+      <div className="rounded-[var(--radius-card)] border border-[var(--color-hairline-soft)] bg-[var(--color-card)] p-3 shadow-[var(--shadow-card)]">
+        <div className="mb-2 flex items-center justify-between gap-3">
+          <p className="text-sm font-semibold text-[var(--color-ink)]">Overall rating</p>
+          <span className="font-mono text-[10px] text-[var(--color-stone)]">Scale 1-10</span>
+        </div>
+        <div className="flex flex-wrap gap-1.5" role="radiogroup" aria-label="Sample rating">
+          {Array.from({ length: 10 }, (_, idx) => idx + 1).map((n) => (
+            <button
+              key={n}
+              type="button"
+              role="radio"
+              aria-checked={rating === n}
+              data-active={rating === n}
+              className="mockup-rating-chip"
+              onClick={() => setRating(n)}
+            >
+              {n}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <button type="button" onClick={submit} className="mockup-cta" disabled={submitted}>
+        <span className="mockup-icon-swap">
+          <Icon
+            icon="solar:lock-keyhole-linear"
+            width={17}
+            height={17}
+            data-state={submitted ? "hidden" : "visible"}
+          />
+          <Icon
+            icon="solar:check-circle-bold"
+            width={17}
+            height={17}
+            data-state={submitted ? "visible" : "hidden"}
+          />
+        </span>
+        {submitted ? "Encrypted with Seal" : "Encrypt and submit"}
+      </button>
+    </div>
+  )
+}
+
+function ResponsesPanel() {
+  const rows = [
+    { id: "0x71a…f4c", rating: 9, severity: "Low", time: "2m ago" },
+    { id: "0xa18…b22", rating: 10, severity: "Info", time: "11m ago" },
+    { id: "0xc40…2e9", rating: 7, severity: "Med", time: "32m ago" },
+  ]
+  return (
+    <div className="rounded-[var(--radius-card)] border border-[var(--color-hairline-soft)] bg-[var(--color-card)] p-1.5 shadow-[var(--shadow-card)]">
+      <div className="grid grid-cols-[1.2fr_0.6fr_0.7fr_0.7fr] gap-2 px-3 py-2 text-[10px] font-bold uppercase tracking-[0.14em] text-[var(--color-stone)]">
+        <span>Submitter</span>
+        <span className="text-right">Rating</span>
+        <span>Severity</span>
+        <span className="text-right">Decrypt</span>
+      </div>
+      {rows.map((row) => (
+        <div
+          key={row.id}
+          className="grid grid-cols-[1.2fr_0.6fr_0.7fr_0.7fr] items-center gap-2 rounded-[var(--radius-button)] px-3 py-2.5 text-xs transition-[background-color] duration-150 hover:bg-[var(--color-canvas)]"
+        >
+          <span className="font-mono text-[11px] text-[var(--color-charcoal)]">{row.id}</span>
+          <span className="mockup-stat-value text-right text-sm font-bold text-[var(--color-ink)]">
+            {row.rating}
+          </span>
+          <span className="text-[11px] font-semibold text-[var(--color-charcoal)]">
+            {row.severity}
+          </span>
+          <span className="flex items-center justify-end gap-1 text-[10px] font-semibold text-[var(--color-primary-deep)]">
+            <Icon icon="solar:eye-linear" width={12} height={12} />
+            {row.time}
+          </span>
+        </div>
+      ))}
     </div>
   )
 }
@@ -208,72 +350,174 @@ function AssetImage({
 
 function StatCard({ value, label }: { value: string; label: string }) {
   return (
-    <div className="rounded-[var(--radius-card)] border border-[var(--color-hairline-soft)] bg-[var(--color-card)] px-4 py-3 text-center">
-      <p className="font-mono text-lg font-bold text-[var(--color-ink)] [font-variant-numeric:tabular-nums]">
+    <div className="rounded-[var(--radius-card)] border border-[var(--color-hairline-soft)] bg-[var(--color-card)] px-3 py-2 text-center">
+      <p className="mockup-stat-value font-mono text-base font-bold text-[var(--color-ink)]">
         {value}
       </p>
-      <p className="text-[11px] font-medium text-[var(--color-slate)]">{label}</p>
+      <p className="text-[10px] font-medium text-[var(--color-slate)]">{label}</p>
     </div>
   )
 }
 
 function ProductMockup() {
+  const [tab, setTab] = useState<MockupTab>("builder")
+  const [pending, setPending] = useState<MockupTab | null>(null)
+
+  const switchTab = (next: MockupTab) => {
+    if (next === tab) return
+    setPending(next)
+    window.setTimeout(() => {
+      setTab(next)
+      setPending(null)
+    }, 140)
+  }
+
+  const responses = useAnimatedNumber(42, 1100)
+  const rating = useAnimatedNumber(4.7, 1100, 1)
+  const receipts = useAnimatedNumber(1, 700)
+
+  const proofChips: { icon: string; copy: string; href: string; label: string }[] = [
+    {
+      icon: "solar:shield-keyhole-linear",
+      copy: "Response encrypted with Seal",
+      href: "/f/demo/",
+      label: "Try the encrypted submit flow",
+    },
+    {
+      icon: "solar:database-linear",
+      copy: "Stored as Walrus blob",
+      href: "/admin/?formId=demo",
+      label: "Inspect stored Walrus blobs in admin",
+    },
+    {
+      icon: "solar:verified-check-linear",
+      copy: "On-chain proof via Sui",
+      href: "https://suiscan.xyz/mainnet/object/0xb90d18321d8c4652743a7c0ae0747b4723e7dedb954d5844c48b3bd44a715c4d",
+      label: "View the Walform Move package on Suiscan",
+    },
+  ]
+
   return (
     <div className="relative">
       <div
         suppressHydrationWarning
-        className="absolute -right-6 top-20 z-10 hidden w-44 space-y-3 lg:block"
+        className="absolute -right-6 top-20 z-10 hidden w-52 space-y-3 lg:block"
       >
-        {[
-          ["solar:shield-keyhole-linear", "Response encrypted with Seal"],
-          ["solar:database-linear", "Stored as Walrus blob"],
-          ["solar:verified-check-linear", "On-chain proof via Sui"],
-        ].map(([icon, copy], index) => (
-          <div
-            key={copy}
-            className="scroll-reveal-stagger flex items-center gap-3 rounded-[var(--radius-card)] border border-[var(--color-hairline-soft)] bg-[var(--color-card)] p-3 text-xs font-semibold text-[var(--color-charcoal)] shadow-[var(--shadow-card)]"
-            style={{ transitionDelay: `${160 + index * 90}ms` }}
-          >
-            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[var(--radius-button)] bg-[var(--color-tint-mint)] text-[var(--color-primary)]">
-              <Icon icon={icon} width={17} height={17} />
-            </span>
-            {copy}
-          </div>
-        ))}
+        {proofChips.map((chip, index) => {
+          const external = chip.href.startsWith("http")
+          const className = "mockup-chip scroll-reveal-stagger"
+          const delayStyle = { transitionDelay: `${160 + index * 90}ms` }
+          const inner = (
+            <>
+              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[var(--radius-button)] bg-[var(--color-tint-mint)] text-[var(--color-primary)]">
+                <Icon icon={chip.icon} width={17} height={17} />
+              </span>
+              <span className="leading-tight text-pretty">{chip.copy}</span>
+              <Icon
+                icon="solar:arrow-right-up-linear"
+                width={14}
+                height={14}
+                className="ml-auto text-[var(--color-stone)]"
+                aria-hidden
+              />
+            </>
+          )
+          return external ? (
+            <a
+              key={chip.copy}
+              href={chip.href}
+              target="_blank"
+              rel="noreferrer"
+              aria-label={chip.label}
+              className={className}
+              style={delayStyle}
+            >
+              {inner}
+            </a>
+          ) : (
+            <Link
+              key={chip.copy}
+              href={chip.href}
+              aria-label={chip.label}
+              className={className}
+              style={delayStyle}
+            >
+              {inner}
+            </Link>
+          )
+        })}
       </div>
 
-      <div className="rounded-[var(--radius-hero)] border border-[var(--color-hairline-soft)] bg-[var(--color-card)] p-3 shadow-[var(--shadow-hero)]">
-        <div className="rounded-[18px] border border-[var(--color-hairline-soft)] bg-[var(--color-canvas)] p-5">
-          <div className="mb-5 flex items-start justify-between gap-4">
+      <div className="rounded-[var(--radius-hero)] border border-[var(--color-hairline-soft)] bg-[var(--color-card)] p-2.5 shadow-[var(--shadow-hero)]">
+        <div className="rounded-[18px] border border-[var(--color-hairline-soft)] bg-[var(--color-canvas)] p-4">
+          <div className="mb-3 flex items-start justify-between gap-4">
             <div>
               <div className="flex items-center gap-2">
                 <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--color-slate)]">
-                  Builder
+                  Walform
                 </p>
                 <span className="rounded-full bg-[var(--color-tint-mint)] px-2 py-0.5 text-[9px] font-bold text-[var(--color-primary-deep)]">
-                  PREVIEW
+                  LIVE
                 </span>
               </div>
-              <h2 className="mt-1 text-lg font-bold text-[var(--color-ink)]">
+              <h2 className="mt-1 text-pretty text-lg font-bold text-[var(--color-ink)]">
                 Walrus sessions feedback
               </h2>
             </div>
-            <span className="rounded-[var(--radius-pill)] bg-[var(--color-tint-cream)] px-3 py-1 text-[10px] font-bold text-[var(--color-accent-deep)]">
+            <span className="inline-flex items-center gap-1 rounded-[var(--radius-pill)] bg-[var(--color-tint-cream)] px-3 py-1 text-[10px] font-bold text-[var(--color-accent-deep)]">
+              <Icon icon="solar:lock-keyhole-linear" width={11} height={11} />
               Seal enabled
             </span>
           </div>
 
-          <div className="pointer-events-none grid gap-3 opacity-80">
-            <FieldPreview label="What worked well?" meta="Long text" required />
-            <FieldPreview label="Overall rating" meta="Scale 1-10" required />
-            <FieldPreview label="Attach screenshot" meta="File upload" />
+          <div
+            role="tablist"
+            aria-label="Walform mockup view"
+            className="mb-3 flex flex-wrap items-center gap-1 rounded-[var(--radius-pill)] border border-[var(--color-hairline-soft)] bg-[var(--color-card)] p-1"
+          >
+            {(
+              [
+                ["builder", "solar:widget-5-linear", "Builder"],
+                ["preview", "solar:pen-new-square-linear", "Live preview"],
+                ["responses", "solar:chart-square-linear", "Responses"],
+              ] as const
+            ).map(([id, icon, label]) => (
+              <button
+                key={id}
+                role="tab"
+                type="button"
+                aria-selected={tab === id}
+                data-active={tab === id}
+                className="mockup-tab"
+                onClick={() => switchTab(id)}
+              >
+                <Icon icon={icon} width={13} height={13} />
+                {label}
+              </button>
+            ))}
           </div>
 
-          <div className="mt-4 grid grid-cols-3 gap-3">
-            <StatCard value="42" label="responses" />
-            <StatCard value="4.7" label="avg rating" />
-            <StatCard value="1" label="SBT receipts" />
+          <div
+            className="mockup-panel mockup-scroll"
+            data-state={pending ? "exit" : "enter"}
+            role="tabpanel"
+            aria-live="polite"
+          >
+            {tab === "builder" && <BuilderPanel />}
+            {tab === "preview" && <PreviewPanel />}
+            {tab === "responses" && <ResponsesPanel />}
           </div>
+
+          <div className="mt-3 grid grid-cols-3 gap-2">
+            <StatCard value={responses} label="responses" />
+            <StatCard value={rating} label="avg rating" />
+            <StatCard value={receipts} label="SBT receipts" />
+          </div>
+
+          <Link href="/f/demo/" className="mockup-cta mt-3">
+            Try the live demo
+            <Icon icon="solar:arrow-right-linear" width={15} height={15} />
+          </Link>
         </div>
       </div>
     </div>
@@ -289,7 +533,7 @@ export default function Home() {
       suppressHydrationWarning
       className="grain-overlay landing-bg min-h-[100dvh] bg-[var(--color-canvas)] text-[var(--color-charcoal)]"
     >
-      <section className="relative mx-auto grid max-w-7xl gap-12 px-5 pb-16 pt-12 md:grid-cols-[0.95fr_1.05fr] md:items-center md:px-8 md:pb-24 md:pt-20">
+      <section className="relative mx-auto grid max-w-7xl gap-12 px-5 pb-16 pt-12 md:grid-cols-[0.95fr_1.05fr] md:items-center md:gap-10 md:px-8 md:pb-12 md:pt-16 md:min-h-[100dvh]">
         <div className="scroll-reveal relative z-10">
           <p className="mb-5 inline-flex items-center gap-2 rounded-[var(--radius-pill)] border border-[var(--color-hairline)] bg-[var(--color-card)] px-3 py-1.5 text-xs font-bold text-[var(--color-primary-deep)]">
             <Icon icon="solar:verified-check-linear" width={15} height={15} />
