@@ -18,22 +18,26 @@ export function Navbar() {
   const account = useCurrentAccount()
   const [mobileOpen, setMobileOpen] = useState(false)
   const isPublicFormPath = pathname === "/f" || pathname.startsWith("/f/")
-  const [adminPreviewFormId, setAdminPreviewFormId] = useState<string | null>(null)
-  const adminHref = adminPreviewFormId
-    ? `/admin/?formId=${encodeURIComponent(adminPreviewFormId)}`
+  const [contextFormId, setContextFormId] = useState<string | null>(null)
+  const adminHref = contextFormId
+    ? `/admin/?formId=${encodeURIComponent(contextFormId)}`
     : "/admin/"
-  const showAdminLink = Boolean(adminPreviewFormId || (account && !isPublicFormPath))
+  const showAdminLink = Boolean(contextFormId || account)
 
   useEffect(() => {
     const timeoutId = window.setTimeout(() => {
       if (!isPublicFormPath) {
-        setAdminPreviewFormId(null)
+        setContextFormId(null)
         return
       }
 
       const params = new URLSearchParams(window.location.search)
-      const nextFormId = params.get("from") === "admin" ? params.get("formId") : null
-      setAdminPreviewFormId(nextFormId?.trim() || null)
+      const previewId =
+        params.get("from") === "admin" ? params.get("formId")?.trim() || null : null
+      const queryFormId = params.get("formId")?.trim() || null
+      const slugMatch = pathname.match(/^\/f\/([^/]+)/)
+      const pathFormId = slugMatch?.[1] ? decodeURIComponent(slugMatch[1]) : null
+      setContextFormId(previewId || queryFormId || pathFormId)
     }, 0)
 
     return () => window.clearTimeout(timeoutId)
