@@ -4,7 +4,7 @@ import { Icon } from "@iconify/react"
 import { useCurrentAccount, useSignAndExecuteTransaction, useSuiClient } from "@mysten/dapp-kit"
 import type { FieldType, PolicyConfig, WalformSchema } from "@walform/shared"
 import Link from "next/link"
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import { useForm, useWatch } from "react-hook-form"
 
 import { Button } from "@/components/ui/button"
@@ -64,6 +64,18 @@ export function WalformBuilder({ templateSchema = null }: WalformBuilderProps) {
   const [deployState, setDeployState] = useState<"idle" | "signing" | "success" | "error">("idle")
   const [deployedFormId, setDeployedFormId] = useState<string | null>(null)
   const [deployError, setDeployError] = useState("")
+  const jsonSectionRef = useRef<HTMLDivElement>(null)
+  const prevSavedJson = useRef("")
+
+  useEffect(() => {
+    if (savedJson && savedJson !== prevSavedJson.current) {
+      prevSavedJson.current = savedJson
+      // Small delay so the DOM has painted the section before scrolling.
+      requestAnimationFrame(() => {
+        jsonSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })
+      })
+    }
+  }, [savedJson])
 
   const currentAccount = useCurrentAccount()
   const suiClient = useSuiClient()
@@ -475,7 +487,10 @@ export function WalformBuilder({ templateSchema = null }: WalformBuilderProps) {
 
         {/* Exported JSON */}
         {savedJson && (
-          <section className="mt-6 rounded-[var(--radius-card)] border border-[var(--color-hairline-soft)] bg-[#10201E] p-4 shadow-[var(--shadow-card)]">
+          <section
+            ref={jsonSectionRef}
+            className="mt-6 rounded-[var(--radius-card)] border border-[var(--color-hairline-soft)] bg-[#10201E] p-4 shadow-[var(--shadow-card)]"
+          >
             <div className="mb-3 flex items-center justify-between">
               <h2 className="text-lg font-bold text-white">Schema JSON</h2>
               <div className="flex items-center gap-2">

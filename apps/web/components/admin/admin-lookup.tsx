@@ -147,7 +147,7 @@ export function AdminLookup() {
               value={formId}
               onChange={(event) => setFormId(event.target.value)}
               placeholder="0x... or demo"
-              className="h-11 rounded-[var(--radius-button)] border border-[var(--color-hairline-soft)] bg-[var(--color-card)] px-3 font-mono text-sm text-[var(--color-charcoal)] outline-none transition-colors placeholder:font-sans placeholder:text-[var(--color-stone)] focus:border-[var(--color-primary)]"
+              className="w-full h-11 rounded-[var(--radius-button)] border border-[var(--color-hairline-soft)] bg-[var(--color-card)] px-3 font-mono text-sm text-[var(--color-charcoal)] outline-none transition-colors placeholder:font-sans placeholder:text-[var(--color-stone)] focus:border-[var(--color-primary)]"
             />
           </label>
           <div className="flex items-end">

@@ -311,11 +311,7 @@ export function AdminDashboard({ formId }: AdminDashboardProps) {
             aria-labelledby="tab-bounty"
             className="border-t border-[var(--color-hairline-soft)] pt-6"
           >
-            <BountyPanel
-              formId={formId}
-              records={records}
-              packageId={getConfiguredPackageId()}
-            />
+            <BountyPanel formId={formId} records={records} packageId={getConfiguredPackageId()} />
           </div>
         )}
 
@@ -352,12 +348,12 @@ export function AdminDashboard({ formId }: AdminDashboardProps) {
             </section>
 
             {/* Main content — list + detail */}
-            <section className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_420px]">
+            <section className="min-w-0 grid gap-6 lg:grid-cols-[minmax(0,1fr)_420px]">
               {/* Response list */}
-              <div className="rounded-[var(--radius-card)] border border-[var(--color-hairline-soft)] bg-[var(--color-card)]">
+              <div className="min-w-0 overflow-hidden rounded-[var(--radius-card)] border border-[var(--color-hairline-soft)] bg-[var(--color-card)]">
                 {/* Filters bar */}
-                <div className="flex flex-col gap-3 border-b border-[var(--color-hairline-soft)] p-5 lg:flex-row lg:items-center lg:justify-between">
-                  <div>
+                <div className="flex flex-col gap-3 border-b border-[var(--color-hairline-soft)] p-4 sm:p-5 lg:flex-row lg:items-center lg:justify-between">
+                  <div className="min-w-0">
                     <h2 className="text-base font-semibold text-[var(--color-ink)]">Responses</h2>
                     <p className="mt-0.5 text-xs text-[var(--color-slate)]">
                       {metrics.latestTimestamp
@@ -365,7 +361,7 @@ export function AdminDashboard({ formId }: AdminDashboardProps) {
                         : "No submissions have been indexed for this form yet"}
                     </p>
                   </div>
-                  <div className="flex flex-wrap gap-2 sm:gap-3">
+                  <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:gap-3">
                     <SelectFilter
                       label="Severity"
                       value={severity}
@@ -394,6 +390,7 @@ export function AdminDashboard({ formId }: AdminDashboardProps) {
                       label="Date"
                       value={dateFilter}
                       onChange={(value) => setDateFilter(value as DateFilter)}
+                      className="col-span-2 sm:col-span-1"
                     >
                       <option value="all">Any date</option>
                       <option value="24h">Last 24h</option>
@@ -427,17 +424,47 @@ export function AdminDashboard({ formId }: AdminDashboardProps) {
                       return (
                         <button
                           key={record.index}
-                          className={`group grid w-full gap-3 px-5 py-3.5 text-left transition-colors ${
+                          className={`group grid w-full gap-x-3 gap-y-1 px-4 py-3.5 text-left transition-colors grid-cols-[minmax(0,1fr)_auto] ${
                             isActive
                               ? "bg-[var(--color-tint-mint)]"
                               : "hover:bg-[var(--color-canvas)]"
-                          } md:grid-cols-[56px_minmax(0,1fr)_96px_120px]`}
+                          } sm:px-5 md:grid-cols-[56px_minmax(0,1fr)_96px_120px] md:gap-3`}
                           onClick={() => setSelectedIndex(record.index)}
                         >
-                          <span className="font-mono text-xs tabular-nums text-[var(--color-slate)]">
+                          {/* Mobile: combined content — col 1 */}
+                          <div className="min-w-0 overflow-hidden md:hidden">
+                            <div className="flex items-center gap-2">
+                              <span className="shrink-0 font-mono text-xs tabular-nums text-[var(--color-slate)]">
+                                #{record.index}
+                              </span>
+                              <span className="truncate text-sm font-medium text-[var(--color-charcoal)]">
+                                {summarizeAnswers(record.response.answers)}
+                              </span>
+                            </div>
+                            <div className="mt-0.5 truncate font-mono text-[11px] text-[var(--color-stone)]">
+                              {record.ref.blob_id}
+                            </div>
+                            <div className="mt-1 flex items-center gap-2">
+                              <span
+                                className={`rounded px-1.5 py-0.5 text-[11px] font-semibold ${statusClasses[record.ref.status]}`}
+                              >
+                                {titleCase(record.ref.status)}
+                              </span>
+                              <span className="font-mono text-[11px] tabular-nums text-[var(--color-stone)]">
+                                {formatDate(record.ref.timestamp_ms)}
+                              </span>
+                            </div>
+                          </div>
+                          {/* Mobile: severity badge — col 2 */}
+                          <div className="self-center md:hidden">
+                            <SeverityBadge severity={record.ref.severity} />
+                          </div>
+                          {/* Desktop: index — col 1 */}
+                          <span className="hidden font-mono text-xs tabular-nums text-[var(--color-slate)] md:block">
                             #{record.index}
                           </span>
-                          <div className="min-w-0">
+                          {/* Desktop: content — col 2 */}
+                          <div className="hidden min-w-0 overflow-hidden md:block">
                             <div className="truncate text-sm font-medium text-[var(--color-charcoal)]">
                               {summarizeAnswers(record.response.answers)}
                             </div>
@@ -445,8 +472,12 @@ export function AdminDashboard({ formId }: AdminDashboardProps) {
                               {record.ref.blob_id}
                             </div>
                           </div>
-                          <SeverityBadge severity={record.ref.severity} />
-                          <div className="flex flex-col items-start gap-0.5">
+                          {/* Desktop: severity — col 3 */}
+                          <div className="hidden self-center md:block">
+                            <SeverityBadge severity={record.ref.severity} />
+                          </div>
+                          {/* Desktop: status + date — col 4 */}
+                          <div className="hidden flex-col items-start gap-0.5 md:flex">
                             <span
                               className={`rounded px-1.5 py-0.5 text-[11px] font-semibold ${statusClasses[record.ref.status]}`}
                             >
@@ -464,11 +495,11 @@ export function AdminDashboard({ formId }: AdminDashboardProps) {
               </div>
 
               {/* Detail panel */}
-              <aside className="rounded-[var(--radius-card)] border border-[var(--color-hairline-soft)] bg-[var(--color-card)]">
+              <aside className="min-w-0 overflow-hidden rounded-[var(--radius-card)] border border-[var(--color-hairline-soft)] bg-[var(--color-card)]">
                 {selectedRecord ? (
                   <div className="flex flex-col">
                     {/* Detail header */}
-                    <div className="flex items-start justify-between gap-4 border-b border-[var(--color-hairline-soft)] p-5">
+                    <div className="flex items-start justify-between gap-4 border-b border-[var(--color-hairline-soft)] p-4 sm:p-5">
                       <div>
                         <p className="font-mono text-[11px] tabular-nums text-[var(--color-slate)]">
                           Response #{selectedRecord.index}
@@ -492,12 +523,12 @@ export function AdminDashboard({ formId }: AdminDashboardProps) {
 
                     {/* Answers */}
                     <div className="border-t border-[var(--color-hairline-soft)]">
-                      <h3 className="px-5 pt-4 pb-2 text-[11px] font-semibold uppercase tracking-wide text-[var(--color-slate)]">
+                      <h3 className="px-4 pt-4 pb-2 text-[11px] font-semibold uppercase tracking-wide text-[var(--color-slate)] sm:px-5">
                         Answers
                       </h3>
                       <div className="divide-y divide-[var(--color-hairline-soft)]">
                         {answerEntries.map(([key, value]) => (
-                          <div key={key} className="px-5 py-3">
+                          <div key={key} className="px-4 py-3 sm:px-5">
                             <div className="text-[11px] font-semibold uppercase tracking-wide text-[var(--color-slate)]">
                               {key}
                             </div>
@@ -510,7 +541,7 @@ export function AdminDashboard({ formId }: AdminDashboardProps) {
                     </div>
 
                     {/* Note */}
-                    <div className="border-t border-[var(--color-hairline-soft)] p-5">
+                    <div className="border-t border-[var(--color-hairline-soft)] p-4 sm:p-5">
                       <label className="grid gap-2">
                         <span className="text-[11px] font-semibold uppercase tracking-wide text-[var(--color-slate)]">
                           Internal note
@@ -524,7 +555,7 @@ export function AdminDashboard({ formId }: AdminDashboardProps) {
                               [selectedRecord.index]: event.target.value,
                             }))
                           }}
-                          className="min-h-28 resize-y rounded-[var(--radius-button)] border border-[var(--color-hairline-soft)] bg-[var(--color-canvas)] p-3 text-sm text-[var(--color-charcoal)] outline-none transition-colors focus:border-[var(--color-primary)]"
+                          className="w-full min-h-28 resize-y rounded-[var(--radius-button)] border border-[var(--color-hairline-soft)] bg-[var(--color-canvas)] p-3 text-sm text-[var(--color-charcoal)] outline-none transition-colors focus:border-[var(--color-primary)]"
                         />
                       </label>
                       <div className="mt-3 flex items-center justify-between gap-3">
@@ -757,21 +788,23 @@ function SelectFilter({
   value,
   onChange,
   children,
+  className,
 }: {
   label: string
   value: string
   onChange: (value: string) => void
   children: React.ReactNode
+  className?: string
 }) {
   return (
-    <label className="grid gap-1">
+    <label className={`grid min-w-0 gap-1 ${className ?? ""}`}>
       <span className="text-[11px] font-semibold uppercase tracking-wide text-[var(--color-slate)]">
         {label}
       </span>
       <select
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        className="h-8 rounded-[var(--radius-button)] border border-[var(--color-hairline-soft)] bg-[var(--color-card)] px-2.5 text-xs text-[var(--color-charcoal)] outline-none transition-colors hover:border-[var(--color-slate)] focus:border-[var(--color-primary)]"
+        className="w-full h-9 rounded-[var(--radius-button)] border border-[var(--color-hairline-soft)] bg-[var(--color-card)] px-2.5 text-xs text-[var(--color-charcoal)] outline-none transition-colors hover:border-[var(--color-slate)] focus:border-[var(--color-primary)] sm:h-8"
       >
         {children}
       </select>
@@ -799,12 +832,12 @@ function DetailRow({
   mono?: boolean
 }) {
   return (
-    <div className="flex items-baseline justify-between gap-4 px-5 py-3">
+    <div className="flex flex-col gap-1 px-4 py-3 sm:flex-row sm:items-baseline sm:justify-between sm:gap-4 sm:px-5">
       <dt className="shrink-0 text-[11px] font-semibold uppercase tracking-wide text-[var(--color-slate)]">
         {label}
       </dt>
       <dd
-        className={`min-w-0 break-words text-right text-sm text-[var(--color-charcoal)] ${mono ? "font-mono text-xs tabular-nums" : ""}`}
+        className={`min-w-0 break-all text-sm text-[var(--color-charcoal)] sm:break-words sm:text-right ${mono ? "font-mono text-xs tabular-nums" : ""}`}
       >
         {value}
       </dd>
