@@ -79,10 +79,10 @@ pnpm deploy:site      # Build + publish Walrus Site
 ```
 ┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐
 │  Form Builder   │───▶│  Walrus (schema) │    │  Sui (Form NFT) │
-│  (Next.js PWA)  │                            │  Move 2024       │
+│  (Next.js PWA)  │    └──────────────────┘    │    Move 2024    │
 └────────┬────────┘                            └────────▲────────┘
-         │ submit                                        │
-         ▼                                               │ ResponseRef
+         │ submit                                       │
+         ▼                                              │ ResponseRef
 ┌─────────────────┐    ┌──────────────────┐             │
 │  Seal encrypt   │───▶│  Walrus blob     │─────────────┘
 │  (client-side)  │    │  (response data) │
@@ -128,9 +128,6 @@ pnpm move:test      # Run Move test suite
 pnpm typecheck      # Catch type errors
 pnpm lint           # ESLint with strict no-explicit-any
 ```
-
-> [!NOTE]
-> `@typescript-eslint/no-explicit-any` is set to `error`. Use `unknown` + type guards. Move pragma is fixed at `edition = "2024"`.
 
 ## License
 
