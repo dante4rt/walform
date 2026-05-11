@@ -180,6 +180,7 @@ export function PublicForm({ formId, schema, adminReturnHref }: PublicFormProps)
 
       setResult(stored)
       setStatus("success")
+      window.scrollTo({ top: 0, behavior: "smooth" })
     } catch (error) {
       setStatus("error")
       setErrorMessage(error instanceof Error ? error.message : "Submission failed.")

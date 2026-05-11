@@ -66,10 +66,15 @@ export function WalformBuilder({ templateSchema = null }: WalformBuilderProps) {
   const [deployError, setDeployError] = useState("")
   const jsonSectionRef = useRef<HTMLDivElement>(null)
   const prevSavedJson = useRef("")
+  const skipScrollRef = useRef(false)
 
   useEffect(() => {
     if (savedJson && savedJson !== prevSavedJson.current) {
       prevSavedJson.current = savedJson
+      if (skipScrollRef.current) {
+        skipScrollRef.current = false
+        return
+      }
       // Small delay so the DOM has painted the section before scrolling.
       requestAnimationFrame(() => {
         jsonSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })
@@ -219,7 +224,8 @@ export function WalformBuilder({ templateSchema = null }: WalformBuilderProps) {
       setDeployedFormId(formObjectId)
       setDeployState("success")
 
-      // Update the JSON view with on-chain metadata.
+      // Update the JSON view with on-chain metadata (skip auto-scroll).
+      skipScrollRef.current = true
       setSavedJson(
         JSON.stringify({ ...fullSchema, _onChainFormId: formObjectId, _blobId: blobId }, null, 2),
       )
@@ -306,9 +312,13 @@ export function WalformBuilder({ templateSchema = null }: WalformBuilderProps) {
                   </code>
                   <button
                     className="flex size-8 items-center justify-center rounded-[var(--radius-button)] border border-[var(--color-hairline-soft)] bg-[var(--color-card)] text-[var(--color-slate)] transition-colors hover:text-[var(--color-primary)]"
-                    onClick={() => copyText(deployedFormId)}
+                    onClick={() =>
+                      copyText(
+                        `${window.location.origin}/f/?formId=${encodeURIComponent(deployedFormId)}`,
+                      )
+                    }
                     type="button"
-                    title="Copy form ID"
+                    title="Copy form link"
                   >
                     <Icon
                       icon={copied ? "solar:check-circle-linear" : "solar:copy-linear"}

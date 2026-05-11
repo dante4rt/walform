@@ -191,10 +191,22 @@ export function AdminDashboard({ formId }: AdminDashboardProps) {
   }
 
   function exportJson() {
+    const mapped = filteredRecords.map((record) => ({
+      ...record,
+      response: {
+        ...record.response,
+        answers: Object.fromEntries(
+          Object.entries(record.response.answers).map(([key, value]) => [
+            fieldLabels[key] ?? key,
+            value,
+          ]),
+        ),
+      },
+    }))
     downloadText(
       `walform-${formId}-responses.json`,
       "application/json;charset=utf-8",
-      JSON.stringify(filteredRecords, null, 2),
+      JSON.stringify(mapped, null, 2),
     )
   }
 
