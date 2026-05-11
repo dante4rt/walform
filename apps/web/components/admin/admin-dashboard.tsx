@@ -4,6 +4,7 @@ import { Icon } from "@iconify/react"
 import type { ResponseStatus, Severity } from "@walform/shared"
 import { RESPONSE_STATUSES, SEVERITIES } from "@walform/shared"
 import { useEffect, useMemo, useState } from "react"
+import Link from "next/link"
 
 import { Button } from "@/components/ui"
 import { formatFileSize, isAttachmentAnswer, type AttachmentAnswer } from "@/lib/attachments"
@@ -97,6 +98,26 @@ export function AdminDashboard({ formId }: AdminDashboardProps) {
     return () => {
       cancelled = true
     }
+  }, [formId])
+
+  // Derive field labels from cached schema in localStorage
+  const fieldLabels = useMemo(() => {
+    try {
+      const schemaJson = localStorage.getItem(`walform:schema:${formId}`)
+      if (schemaJson) {
+        const schema = JSON.parse(schemaJson) as { fields?: Array<{ id: string; label: string }> }
+        if (schema.fields) {
+          const labels: Record<string, string> = {}
+          for (const field of schema.fields) {
+            labels[field.id] = field.label
+          }
+          return labels
+        }
+      }
+    } catch {
+      // Schema not cached or invalid — fall back to raw field IDs
+    }
+    return {}
   }, [formId])
 
   const filteredRecords = useMemo(() => {
@@ -198,6 +219,14 @@ export function AdminDashboard({ formId }: AdminDashboardProps) {
         <header className="flex flex-col gap-5 border-b border-[var(--color-hairline)] pb-6 lg:flex-row lg:items-end lg:justify-between">
           <div>
             <div className="flex items-center gap-2">
+              <Link
+                href="/admin/"
+                className="inline-flex items-center gap-1 text-sm font-medium text-[var(--color-slate)] transition-colors hover:text-[var(--color-charcoal)]"
+              >
+                <Icon icon="solar:arrow-left-linear" className="h-4 w-4" />
+                Forms
+              </Link>
+              <span className="text-[var(--color-hairline-soft)]">/</span>
               <Icon
                 icon="solar:shield-keyhole-linear"
                 className="h-4 w-4 text-[var(--color-slate)]"
@@ -438,7 +467,7 @@ export function AdminDashboard({ formId }: AdminDashboardProps) {
                                 #{record.index}
                               </span>
                               <span className="truncate text-sm font-medium text-[var(--color-charcoal)]">
-                                {summarizeAnswers(record.response.answers)}
+                                {summarizeAnswers(record.response.answers, fieldLabels)}
                               </span>
                             </div>
                             <div className="mt-0.5 truncate font-mono text-[11px] text-[var(--color-stone)]">
@@ -466,7 +495,7 @@ export function AdminDashboard({ formId }: AdminDashboardProps) {
                           {/* Desktop: content — col 2 */}
                           <div className="hidden min-w-0 overflow-hidden md:block">
                             <div className="truncate text-sm font-medium text-[var(--color-charcoal)]">
-                              {summarizeAnswers(record.response.answers)}
+                              {summarizeAnswers(record.response.answers, fieldLabels)}
                             </div>
                             <div className="mt-0.5 truncate font-mono text-[11px] text-[var(--color-stone)]">
                               {record.ref.blob_id}
@@ -530,7 +559,7 @@ export function AdminDashboard({ formId }: AdminDashboardProps) {
                         {answerEntries.map(([key, value]) => (
                           <div key={key} className="px-4 py-3 sm:px-5">
                             <div className="text-[11px] font-semibold uppercase tracking-wide text-[var(--color-slate)]">
-                              {key}
+                              {getFieldLabel(fieldLabels, key)}
                             </div>
                             <div className="mt-1 break-words text-sm text-[var(--color-charcoal)]">
                               <AnswerValue value={value} />
@@ -922,9 +951,13 @@ function formatAnswer(value: unknown): string {
   return String(value)
 }
 
-function summarizeAnswers(answers: Record<string, unknown>) {
+function summarizeAnswers(answers: Record<string, unknown>, fieldLabels: Record<string, string>) {
   const [firstKey, firstValue] = Object.entries(answers)[0] ?? ["response", "No answer"]
-  return `${titleCase(firstKey)}: ${formatAnswer(firstValue)}`
+  return `${fieldLabels[firstKey] ?? firstKey}: ${formatAnswer(firstValue)}`
+}
+
+function getFieldLabel(fieldLabels: Record<string, string>, key: string): string {
+  return fieldLabels[key] ?? key
 }
 
 function titleCase(value: string) {
