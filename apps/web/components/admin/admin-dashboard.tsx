@@ -647,7 +647,7 @@ function FormIdPill({ formId }: { formId: string }) {
   const [copied, setCopied] = useState(false)
 
   function handleCopy() {
-    void navigator.clipboard.writeText(getAdminUrl(formId)).then(() => {
+    void navigator.clipboard.writeText(getPublicFormUrl(formId)).then(() => {
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)
     })
@@ -661,9 +661,9 @@ function FormIdPill({ formId }: { formId: string }) {
       <span className="font-mono text-xs text-[var(--color-slate)]">{formatFormId(formId)}</span>
       <button
         type="button"
-        aria-label="Copy admin URL"
+        aria-label="Copy form link"
         onClick={handleCopy}
-        title="Copy admin URL"
+        title="Copy form link"
         className="flex items-center text-[var(--color-stone)] transition-colors hover:text-[var(--color-charcoal)]"
       >
         {copied ? (
@@ -678,8 +678,8 @@ function FormIdPill({ formId }: { formId: string }) {
   )
 }
 
-function getAdminUrl(formId: string): string {
-  const path = `/admin/?formId=${encodeURIComponent(formId)}`
+function getPublicFormUrl(formId: string): string {
+  const path = `/f/?formId=${encodeURIComponent(formId)}`
   if (typeof window === "undefined") {
     return path
   }

@@ -11,6 +11,8 @@ coverage/
 *.tsbuildinfo
 packages/contracts/build/
 packages/contracts/.move/
+demo/
+.pnpm-store/
 
 # Keep Markdown notes local. README files are the only Markdown files tracked.
 *.md
