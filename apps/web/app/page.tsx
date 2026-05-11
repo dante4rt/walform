@@ -114,44 +114,38 @@ const buildSteps = [
 ]
 
 const moveFunctions = [
-  ["form::create", "Create a new form Sui NFT"],
-  ["form::submit", "Submit encrypted response"],
-  ["policy::check_access", "Check decrypt permissions"],
-  ["cost::estimate", "Estimate storage cost"],
-  ["bounty::claim", "Claim bounty escrow"],
+  ["form::create_form", "Create a new form Sui NFT"],
+  ["form::submit_response", "Submit encrypted response"],
+  ["form::count_responses", "Count responses (view, no gas)"],
+  ["form::aggregate_rating", "Aggregate rating (view, no gas)"],
+  ["bounty::approve_response", "Approve response + payout bounty"],
 ]
 
-const EXAMPLE_CODE = `import { WalrusClient } from "@mysten/walrus"
-import { SealClient } from "@mysten/seal"
-import { Transaction } from "@mysten/sui/transactions"
-
-const walrus = new WalrusClient({
-  network: "mainnet",
-})
-const seal = new SealClient({
-  serverObjectIds,
-})
-
-const { encryptedObject } = await seal
-  .encrypt({
-    threshold: 2,
-    packageId: WALFORM_PACKAGE_ID,
-    identity: formId,
-    data: new TextEncoder()
-      .encode(JSON.stringify(response)),
-  })
-
-const blobId = await walrus
-  .storeBlob(encryptedObject)
-
+const EXAMPLE_CODE = `// Create a form
 const tx = new Transaction()
 tx.moveCall({
-  target: WALFORM_PACKAGE_ID
-    + "::form::submit_response",
+  target: PACKAGE_ID + "::form::create_form",
   arguments: [
-    tx.object(formId),
-    tx.pure.vector("u8", blobId),
+    tx.pure.vector("u8", schemaBlobId),
+    tx.pure.u64(schemaVersion),
   ],
+})
+
+// Composable reads — any dApp, no gas, no signing
+const result = await client.devInspectTransactionBlock({
+  transactionBlock: (() => {
+    const tx = new Transaction()
+    tx.moveCall({
+      target: PACKAGE_ID + "::form::count_responses",
+      arguments: [tx.object(formId)],
+    })
+    tx.moveCall({
+      target: PACKAGE_ID + "::form::aggregate_rating",
+      arguments: [tx.object(formId), tx.pure.vector("u8", fieldId)],
+    })
+    return tx
+  })(),
+  sender: "0x0",
 })`
 
 function FieldPreview({
