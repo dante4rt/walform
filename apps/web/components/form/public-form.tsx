@@ -11,6 +11,7 @@ import {
   createAttachmentAnswer,
   formatFileSize,
   isAttachmentAnswer,
+  loadAttachmentPreviewUrl,
   type AttachmentAnswer,
 } from "@/lib/attachments"
 import { deleteDraft, loadDraft, saveDraft } from "@/lib/drafts"
@@ -33,7 +34,14 @@ interface PublicFormProps {
   adminReturnHref?: string
 }
 
-type AnswerValue = string | string[] | number | boolean | AttachmentAnswer | null
+type AnswerValue =
+  | string
+  | string[]
+  | number
+  | boolean
+  | AttachmentAnswer
+  | AttachmentAnswer[]
+  | null
 type OptionField = Extract<FormField, { type: "dropdown" | "checkbox_group" }>
 type StarRatingField = Extract<FormField, { type: "star_rating" }>
 
@@ -370,6 +378,17 @@ function FieldControl({
   error?: string
   onChange: (value: AnswerValue) => void
 }) {
+  if (field.type === "confirmation") {
+    return (
+      <div className="grid gap-2">
+        {renderInput(field, value, onChange)}
+        {error ? (
+          <span className="text-xs font-medium text-[var(--color-error)]">{error}</span>
+        ) : null}
+      </div>
+    )
+  }
+
   return (
     <label className="grid gap-2">
       <span className="text-sm font-semibold text-[var(--color-ink)]">
@@ -419,7 +438,11 @@ function renderInput(
   }
 
   if (field.type === "checkbox_group") {
-    const selected = Array.isArray(value) ? value : []
+    const selected = Array.isArray(value)
+      ? value.filter(
+          (selectedOption): selectedOption is string => typeof selectedOption === "string",
+        )
+      : []
     const options = getOptions(field)
 
     return (
@@ -474,6 +497,7 @@ function renderInput(
 
   if (field.type === "screenshot" || field.type === "video") {
     const attachmentFieldType = field.type
+    const selectedAttachments = getAttachmentAnswers(value)
 
     return (
       <div className="grid gap-2">
@@ -481,13 +505,47 @@ function renderInput(
           accept={attachmentFieldType === "screenshot" ? "image/*" : "video/*"}
           className="w-full rounded-[var(--radius-button)] border border-dashed border-[var(--color-stone)] bg-[var(--color-card)] p-3 text-sm file:mr-3 file:rounded-[var(--radius-button)] file:border-0 file:bg-[var(--color-tint-mint)] file:px-3 file:py-2 file:text-sm file:font-semibold file:text-[var(--color-primary-deep)]"
           onChange={async (event) => {
-            const file = event.target.files?.[0]
-            onChange(file ? await createAttachmentAnswer(file, attachmentFieldType) : null)
+            const files = Array.from(event.target.files ?? [])
+
+            if (files.length === 0) {
+              onChange(null)
+              return
+            }
+
+            const attachments = await Promise.all(
+              files.map((file) => createAttachmentAnswer(file, attachmentFieldType)),
+            )
+
+            onChange(
+              attachmentFieldType === "screenshot"
+                ? [...selectedAttachments, ...attachments]
+                : attachments[0],
+            )
+            event.target.value = ""
           }}
+          multiple={attachmentFieldType === "screenshot"}
           type="file"
         />
-        {isAttachmentAnswer(value) ? (
-          <SelectedAttachmentPreview attachment={value} fieldType={attachmentFieldType} />
+        {selectedAttachments.length > 0 ? (
+          <div className="grid gap-2">
+            {selectedAttachments.map((attachment, index) => (
+              <SelectedAttachmentPreview
+                attachment={attachment}
+                fieldType={attachmentFieldType}
+                key={`${attachment.storageKey ?? attachment.name}-${index}`}
+                onRemove={
+                  attachmentFieldType === "screenshot"
+                    ? () => {
+                        const nextAttachments = selectedAttachments.filter(
+                          (_, attachmentIndex) => attachmentIndex !== index,
+                        )
+                        onChange(nextAttachments.length > 0 ? nextAttachments : null)
+                      }
+                    : undefined
+                }
+              />
+            ))}
+          </div>
         ) : null}
       </div>
     )
@@ -506,15 +564,18 @@ function renderInput(
   }
 
   return (
-    <span className="flex items-center gap-2 text-sm text-[var(--color-charcoal)]">
+    <label className="flex items-start gap-2 text-sm leading-6 text-[var(--color-charcoal)]">
       <input
         checked={value === true}
-        className="size-5 accent-[var(--color-primary)]"
+        className="mt-0.5 size-5 shrink-0 accent-[var(--color-primary)]"
         onChange={(event) => onChange(event.target.checked)}
         type="checkbox"
       />
-      {field.label}
-    </span>
+      <span>
+        {field.label}
+        {field.required ? <span className="text-[var(--color-error)]"> *</span> : null}
+      </span>
+    </label>
   )
 }
 
@@ -537,6 +598,14 @@ function hasAnswer(value: AnswerValue | undefined): boolean {
   }
 
   return value !== undefined && value !== null && value !== "" && value !== false
+}
+
+function getAttachmentAnswers(value: AnswerValue | undefined): AttachmentAnswer[] {
+  if (Array.isArray(value)) {
+    return value.filter(isAttachmentAnswer)
+  }
+
+  return isAttachmentAnswer(value) ? [value] : []
 }
 
 function normalizeAnswers(fields: FormField[], answers: Record<string, AnswerValue>) {
@@ -569,20 +638,60 @@ function getMaxRating(field: FormField): number {
 function SelectedAttachmentPreview({
   attachment,
   fieldType,
+  onRemove,
 }: {
   attachment: AttachmentAnswer
   fieldType: "screenshot" | "video"
+  onRemove?: () => void
 }) {
-  const canPreview = fieldType === "screenshot" && attachment.previewDataUrl
+  const [previewUrl, setPreviewUrl] = useState<string | null>(attachment.previewDataUrl ?? null)
+
+  useEffect(() => {
+    let active = true
+    let objectUrl: string | null = null
+
+    loadAttachmentPreviewUrl(attachment).then((url) => {
+      if (!url) {
+        return
+      }
+
+      if (!active) {
+        if (url.startsWith("blob:")) {
+          URL.revokeObjectURL(url)
+        }
+        return
+      }
+
+      objectUrl = url.startsWith("blob:") ? url : null
+      setPreviewUrl(url)
+    })
+
+    return () => {
+      active = false
+      if (objectUrl) {
+        URL.revokeObjectURL(objectUrl)
+      }
+    }
+  }, [attachment])
+
+  const canPreviewImage = fieldType === "screenshot" && previewUrl
+  const canPreviewVideo = fieldType === "video" && previewUrl
 
   return (
     <div className="flex items-center gap-3 rounded-[var(--radius-button)] border border-[var(--color-hairline-soft)] bg-[var(--color-canvas)] p-2">
-      {canPreview ? (
+      {canPreviewImage ? (
         <span
           aria-label={`Preview of ${attachment.name}`}
           className="h-14 w-20 shrink-0 rounded border border-[var(--color-hairline-soft)] bg-cover bg-center"
           role="img"
-          style={{ backgroundImage: `url("${attachment.previewDataUrl}")` }}
+          style={{ backgroundImage: `url("${previewUrl}")` }}
+        />
+      ) : canPreviewVideo ? (
+        <video
+          className="h-14 w-24 shrink-0 rounded border border-[var(--color-hairline-soft)] bg-black object-contain"
+          controls
+          preload="metadata"
+          src={previewUrl}
         />
       ) : (
         <span className="flex size-10 shrink-0 items-center justify-center rounded bg-[var(--color-tint-sky)] text-[var(--color-primary)]">
@@ -598,6 +707,16 @@ function SelectedAttachmentPreview({
         </span>
         <span>{formatFileSize(attachment.size)}</span>
       </span>
+      {onRemove ? (
+        <button
+          aria-label={`Remove ${attachment.name}`}
+          className="ml-auto flex size-8 shrink-0 items-center justify-center rounded-[var(--radius-button)] text-[var(--color-stone)] transition-colors hover:bg-[var(--color-card)] hover:text-[var(--color-error)]"
+          onClick={onRemove}
+          type="button"
+        >
+          <Icon aria-hidden icon="solar:trash-bin-trash-linear" />
+        </button>
+      ) : null}
     </div>
   )
 }

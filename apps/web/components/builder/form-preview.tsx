@@ -54,6 +54,10 @@ export function FormPreview({ title, description, fields, mode }: FormPreviewPro
 }
 
 function PreviewField({ field }: { field: BuilderField }) {
+  if (field.type === "confirmation") {
+    return <div className="grid gap-2">{renderControl(field)}</div>
+  }
+
   return (
     <label className="grid gap-2">
       <span className="text-sm font-semibold text-[var(--color-ink)]">
@@ -109,7 +113,7 @@ function renderControl(field: BuilderField) {
   if (field.type === "screenshot" || field.type === "video") {
     return (
       <div className="flex h-24 items-center justify-center rounded-[var(--radius-button)] border border-dashed border-[var(--color-stone)] bg-[var(--color-card)] text-sm text-[var(--color-slate)]">
-        Upload {field.type === "screenshot" ? "image" : "video"}
+        Upload {field.type === "screenshot" ? "images" : "video"}
       </div>
     )
   }
@@ -125,9 +129,12 @@ function renderControl(field: BuilderField) {
   }
 
   return (
-    <span className="flex items-center gap-2 text-sm text-[var(--color-charcoal)]">
+    <span className="flex items-start gap-2 text-sm leading-6 text-[var(--color-charcoal)]">
       <span className="flex size-5 items-center justify-center rounded border border-[var(--color-hairline-soft)] bg-[var(--color-card)]" />
-      {field.label}
+      <span>
+        {field.label}
+        {field.required ? <span className="text-[var(--color-error)]"> *</span> : null}
+      </span>
     </span>
   )
 }

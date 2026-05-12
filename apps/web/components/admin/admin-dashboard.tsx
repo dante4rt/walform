@@ -1,13 +1,18 @@
 "use client"
 
 import { Icon } from "@iconify/react"
-import type { ResponseStatus, Severity } from "@walform/shared"
+import type { FieldType, ResponseStatus, Severity } from "@walform/shared"
 import { RESPONSE_STATUSES, SEVERITIES } from "@walform/shared"
 import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
 
 import { Button } from "@/components/ui"
-import { formatFileSize, isAttachmentAnswer, type AttachmentAnswer } from "@/lib/attachments"
+import {
+  formatFileSize,
+  isAttachmentAnswer,
+  loadAttachmentPreviewUrl,
+  type AttachmentAnswer,
+} from "@/lib/attachments"
 import { toCsv, type CsvColumn } from "@/lib/csv"
 import { getWebhookUrl, setWebhookUrl } from "@/lib/webhook"
 import { formatFormId } from "@/lib/utils"
@@ -21,6 +26,7 @@ import { CostPanel } from "./CostPanel"
 type AdminTab = "responses" | "cost" | "bounty"
 
 type DateFilter = "all" | "24h" | "7d"
+type FieldMetadata = { label: string; type?: FieldType }
 
 interface AdminDashboardProps {
   formId: string
@@ -101,17 +107,19 @@ export function AdminDashboard({ formId }: AdminDashboardProps) {
   }, [formId])
 
   // Derive field labels from cached schema in localStorage
-  const fieldLabels = useMemo(() => {
+  const fieldMetadata = useMemo<Record<string, FieldMetadata>>(() => {
     try {
       const schemaJson = localStorage.getItem(`walform:schema:${formId}`)
       if (schemaJson) {
-        const schema = JSON.parse(schemaJson) as { fields?: Array<{ id: string; label: string }> }
+        const schema = JSON.parse(schemaJson) as {
+          fields?: Array<{ id: string; label: string; type?: FieldType }>
+        }
         if (schema.fields) {
-          const labels: Record<string, string> = {}
+          const metadata: Record<string, FieldMetadata> = {}
           for (const field of schema.fields) {
-            labels[field.id] = field.label
+            metadata[field.id] = { label: field.label, type: field.type }
           }
-          return labels
+          return metadata
         }
       }
     } catch {
@@ -119,6 +127,13 @@ export function AdminDashboard({ formId }: AdminDashboardProps) {
     }
     return {}
   }, [formId])
+  const fieldLabels = useMemo(
+    () =>
+      Object.fromEntries(
+        Object.entries(fieldMetadata).map(([fieldId, metadata]) => [fieldId, metadata.label]),
+      ),
+    [fieldMetadata],
+  )
 
   const filteredRecords = useMemo(() => {
     const minimumTimestamp =
@@ -479,7 +494,7 @@ export function AdminDashboard({ formId }: AdminDashboardProps) {
                                 #{record.index}
                               </span>
                               <span className="truncate text-sm font-medium text-[var(--color-charcoal)]">
-                                {summarizeAnswers(record.response.answers, fieldLabels)}
+                                {summarizeAnswers(record.response.answers, fieldMetadata)}
                               </span>
                             </div>
                             <div className="mt-0.5 truncate font-mono text-[11px] text-[var(--color-stone)]">
@@ -507,7 +522,7 @@ export function AdminDashboard({ formId }: AdminDashboardProps) {
                           {/* Desktop: content — col 2 */}
                           <div className="hidden min-w-0 overflow-hidden md:block">
                             <div className="truncate text-sm font-medium text-[var(--color-charcoal)]">
-                              {summarizeAnswers(record.response.answers, fieldLabels)}
+                              {summarizeAnswers(record.response.answers, fieldMetadata)}
                             </div>
                             <div className="mt-0.5 truncate font-mono text-[11px] text-[var(--color-stone)]">
                               {record.ref.blob_id}
@@ -571,10 +586,10 @@ export function AdminDashboard({ formId }: AdminDashboardProps) {
                         {answerEntries.map(([key, value]) => (
                           <div key={key} className="px-4 py-3 sm:px-5">
                             <div className="text-[11px] font-semibold uppercase tracking-wide text-[var(--color-slate)]">
-                              {getFieldLabel(fieldLabels, key)}
+                              {getFieldLabel(fieldMetadata, key)}
                             </div>
                             <div className="mt-1 break-words text-sm text-[var(--color-charcoal)]">
-                              <AnswerValue value={value} />
+                              <AnswerValue value={value} fieldType={fieldMetadata[key]?.type} />
                             </div>
                           </div>
                         ))}
@@ -896,21 +911,98 @@ function downloadText(filename: string, type: string, content: string) {
   URL.revokeObjectURL(url)
 }
 
-function AnswerValue({ value }: { value: unknown }) {
+function AnswerValue({ value, fieldType }: { value: unknown; fieldType?: FieldType }) {
   if (isAttachmentAnswer(value)) {
     return <AttachmentPreview attachment={value} />
   }
 
-  return <>{formatAnswer(value)}</>
+  if (Array.isArray(value) && value.every(isAttachmentAnswer)) {
+    return (
+      <div className="grid gap-3">
+        {value.map((attachment, index) => (
+          <AttachmentPreview
+            attachment={attachment}
+            key={`${attachment.storageKey ?? attachment.name}-${index}`}
+          />
+        ))}
+      </div>
+    )
+  }
+
+  if (fieldType === "confirmation" && typeof value === "boolean") {
+    return (
+      <span className="inline-flex items-center gap-1.5 font-medium text-[var(--color-charcoal)]">
+        <Icon
+          icon={value ? "solar:check-circle-linear" : "solar:close-circle-linear"}
+          className={`h-4 w-4 ${value ? "text-[var(--color-success)]" : "text-[var(--color-error)]"}`}
+        />
+        {value ? "Confirmed" : "Not confirmed"}
+      </span>
+    )
+  }
+
+  if (typeof value === "string" && (fieldType === "url" || isHttpUrl(value))) {
+    return (
+      <a
+        className="break-all font-medium text-[var(--color-primary)] underline decoration-[var(--color-primary)]/30 underline-offset-4 transition-colors hover:text-[var(--color-primary-deep)]"
+        href={normalizeUrl(value)}
+        rel="noreferrer"
+        target="_blank"
+      >
+        {value}
+      </a>
+    )
+  }
+
+  return <>{formatAnswer(value, fieldType)}</>
 }
 
 function AttachmentPreview({ attachment }: { attachment: AttachmentAnswer }) {
+  const [previewUrl, setPreviewUrl] = useState<string | null>(attachment.previewDataUrl ?? null)
+
+  useEffect(() => {
+    let active = true
+    let objectUrl: string | null = null
+
+    loadAttachmentPreviewUrl(attachment).then((url) => {
+      if (!url) {
+        return
+      }
+
+      if (!active) {
+        if (url.startsWith("blob:")) {
+          URL.revokeObjectURL(url)
+        }
+        return
+      }
+
+      objectUrl = url.startsWith("blob:") ? url : null
+      setPreviewUrl(url)
+    })
+
+    return () => {
+      active = false
+      if (objectUrl) {
+        URL.revokeObjectURL(objectUrl)
+      }
+    }
+  }, [attachment])
+
+  const isVideo = attachment.mimeType.startsWith("video/")
+
   return (
     <div className="overflow-hidden rounded-[var(--radius-button)] border border-[var(--color-hairline-soft)] bg-[var(--color-canvas)]">
-      {attachment.previewDataUrl ? (
+      {previewUrl && isVideo ? (
+        <video
+          className="block aspect-video w-full bg-black object-contain"
+          controls
+          preload="metadata"
+          src={previewUrl}
+        />
+      ) : previewUrl ? (
         <a
           className="block"
-          href={attachment.previewDataUrl}
+          href={previewUrl}
           rel="noreferrer"
           target="_blank"
           title={`Open ${attachment.name}`}
@@ -919,7 +1011,7 @@ function AttachmentPreview({ attachment }: { attachment: AttachmentAnswer }) {
             aria-label={`Preview of ${attachment.name}`}
             className="block aspect-video w-full bg-[var(--color-card)] bg-contain bg-center bg-no-repeat"
             role="img"
-            style={{ backgroundImage: `url("${attachment.previewDataUrl}")` }}
+            style={{ backgroundImage: `url("${previewUrl}")` }}
           />
         </a>
       ) : null}
@@ -932,10 +1024,10 @@ function AttachmentPreview({ attachment }: { attachment: AttachmentAnswer }) {
             {attachment.mimeType || "Unknown type"} · {formatFileSize(attachment.size)}
           </p>
         </div>
-        {attachment.previewDataUrl ? (
+        {previewUrl ? (
           <a
             className="shrink-0 rounded-[var(--radius-button)] border border-[var(--color-hairline-soft)] px-2.5 py-1 text-[11px] font-semibold text-[var(--color-primary)] transition-colors hover:bg-[var(--color-tint-mint)]"
-            href={attachment.previewDataUrl}
+            href={previewUrl}
             rel="noreferrer"
             target="_blank"
           >
@@ -947,13 +1039,21 @@ function AttachmentPreview({ attachment }: { attachment: AttachmentAnswer }) {
   )
 }
 
-function formatAnswer(value: unknown): string {
+function formatAnswer(value: unknown, fieldType?: FieldType): string {
   if (Array.isArray(value)) {
+    if (value.every(isAttachmentAnswer)) {
+      return value.map((attachment) => attachment.name).join(", ")
+    }
+
     return value.join(", ")
   }
 
   if (isAttachmentAnswer(value)) {
     return value.name
+  }
+
+  if (fieldType === "confirmation" && typeof value === "boolean") {
+    return value ? "Confirmed" : "Not confirmed"
   }
 
   if (typeof value === "object" && value !== null) {
@@ -963,13 +1063,28 @@ function formatAnswer(value: unknown): string {
   return String(value)
 }
 
-function summarizeAnswers(answers: Record<string, unknown>, fieldLabels: Record<string, string>) {
+function summarizeAnswers(
+  answers: Record<string, unknown>,
+  fieldMetadata: Record<string, FieldMetadata>,
+) {
   const [firstKey, firstValue] = Object.entries(answers)[0] ?? ["response", "No answer"]
-  return `${fieldLabels[firstKey] ?? firstKey}: ${formatAnswer(firstValue)}`
+  return `${fieldMetadata[firstKey]?.label ?? firstKey}: ${formatAnswer(
+    firstValue,
+    fieldMetadata[firstKey]?.type,
+  )}`
 }
 
-function getFieldLabel(fieldLabels: Record<string, string>, key: string): string {
-  return fieldLabels[key] ?? key
+function getFieldLabel(fieldMetadata: Record<string, FieldMetadata>, key: string): string {
+  return fieldMetadata[key]?.label ?? key
+}
+
+function isHttpUrl(value: string): boolean {
+  return /^https?:\/\//i.test(value.trim())
+}
+
+function normalizeUrl(value: string): string {
+  const trimmed = value.trim()
+  return isHttpUrl(trimmed) ? trimmed : `https://${trimmed}`
 }
 
 function titleCase(value: string) {
