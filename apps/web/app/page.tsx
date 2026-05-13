@@ -467,7 +467,7 @@ function ProductMockup() {
           <div
             role="tablist"
             aria-label="Walform mockup view"
-            className="mb-3 flex flex-wrap items-center gap-1 rounded-[var(--radius-pill)] border border-[var(--color-hairline-soft)] bg-[var(--color-card)] p-1"
+            className="mb-3 flex justify-center flex-wrap items-center gap-1 rounded-[var(--radius-pill)] border border-[var(--color-hairline-soft)] bg-[var(--color-card)] p-1"
           >
             {(
               [

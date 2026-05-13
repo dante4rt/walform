@@ -600,47 +600,73 @@ body {
 }
 
 .hero-word-proof {
-  background: linear-gradient(135deg, #10b981, #06b6d4);
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
+  --hero-word-gradient: linear-gradient(120deg, #10b981 0%, #06b6d4 38%, #84cc16 68%, #10b981 100%);
 }
 
 .hero-word-privacy {
-  background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+  --hero-word-gradient: linear-gradient(120deg, #3b82f6 0%, #8b5cf6 38%, #06b6d4 68%, #3b82f6 100%);
+}
+
+.hero-word-proof,
+.hero-word-privacy {
+  background: var(--hero-word-gradient);
+  background-size: 220% 220%;
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
+  animation: hero-word-gradient-shift 5.5s ease-in-out infinite alternate;
+}
+
+.hero-word-privacy {
+  animation-delay: -2s;
+}
+
+@keyframes hero-word-gradient-shift {
+  from {
+    background-position: 0% 50%;
+  }
+
+  to {
+    background-position: 100% 50%;
+  }
 }
 
 @media (prefers-color-scheme: dark) {
   :root:not(.light) .hero-word-proof {
-    background: linear-gradient(135deg, #5eead4, #22d3ee);
-    -webkit-background-clip: text;
-    background-clip: text;
-    -webkit-text-fill-color: transparent;
+    --hero-word-gradient: linear-gradient(
+      120deg,
+      #5eead4 0%,
+      #22d3ee 38%,
+      #86efac 68%,
+      #5eead4 100%
+    );
   }
 
   :root:not(.light) .hero-word-privacy {
-    background: linear-gradient(135deg, #93c5fd, #c4b5fd);
-    -webkit-background-clip: text;
-    background-clip: text;
-    -webkit-text-fill-color: transparent;
+    --hero-word-gradient: linear-gradient(
+      120deg,
+      #93c5fd 0%,
+      #c4b5fd 38%,
+      #67e8f9 68%,
+      #93c5fd 100%
+    );
   }
 }
 
 :root.dark .hero-word-proof {
-  background: linear-gradient(135deg, #5eead4, #22d3ee);
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
+  --hero-word-gradient: linear-gradient(120deg, #5eead4 0%, #22d3ee 38%, #86efac 68%, #5eead4 100%);
 }
 
 :root.dark .hero-word-privacy {
-  background: linear-gradient(135deg, #93c5fd, #c4b5fd);
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
+  --hero-word-gradient: linear-gradient(120deg, #93c5fd 0%, #c4b5fd 38%, #67e8f9 68%, #93c5fd 100%);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-word-proof,
+  .hero-word-privacy {
+    animation: none;
+    background-position: 0% 50%;
+  }
 }
 
 .fina-portrait {

@@ -50,7 +50,7 @@ type StarRatingField = Extract<FormField, { type: "star_rating" }>
 function FormIdChip({ formId }: { formId: string }) {
   return (
     <span
-      className="inline-block rounded-[var(--radius-pill)] bg-[var(--color-tint-mint)] px-2 py-0.5 font-mono text-[10px] text-[var(--color-primary-deep)]"
+      className="inline-block max-w-full whitespace-normal break-all rounded-[var(--radius-pill)] bg-[var(--color-tint-mint)] px-2 py-0.5 font-mono text-[10px] leading-relaxed text-[var(--color-primary-deep)]"
       title={formId}
     >
       {formId}
