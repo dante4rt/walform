@@ -467,26 +467,27 @@ function ProductMockup() {
           <div
             role="tablist"
             aria-label="Walform mockup view"
-            className="mb-3 flex justify-center flex-wrap items-center gap-1 rounded-[var(--radius-pill)] border border-[var(--color-hairline-soft)] bg-[var(--color-card)] p-1"
+            className="mb-3 grid grid-cols-3 items-center gap-1 rounded-[var(--radius-pill)] border border-[var(--color-hairline-soft)] bg-[var(--color-card)] p-1 md:flex md:flex-nowrap md:justify-center"
           >
             {(
               [
-                ["builder", "solar:widget-5-linear", "Builder"],
-                ["preview", "solar:pen-new-square-linear", "Live preview"],
-                ["responses", "solar:chart-square-linear", "Responses"],
+                ["builder", "solar:widget-5-linear", "Builder", "Builder"],
+                ["preview", "solar:pen-new-square-linear", "Preview", "Live preview"],
+                ["responses", "solar:chart-square-linear", "Responses", "Responses"],
               ] as const
-            ).map(([id, icon, label]) => (
+            ).map(([id, icon, mobileLabel, label]) => (
               <button
                 key={id}
                 role="tab"
                 type="button"
                 aria-selected={tab === id}
                 data-active={tab === id}
-                className="mockup-tab"
+                className="mockup-tab min-w-0 justify-center md:flex-1"
                 onClick={() => switchTab(id)}
               >
                 <Icon icon={icon} width={13} height={13} />
-                {label}
+                <span className="truncate sm:hidden">{mobileLabel}</span>
+                <span className="hidden truncate sm:inline">{label}</span>
               </button>
             ))}
           </div>
